@@ -3,7 +3,7 @@
 DIRECTORY="./build"
 
 if [ ! -d "$DIRECTORY" ]; then
-    printf"Creating diretory ${DIRECTORY}."
+    printf "Creating directory ${DIRECTORY}.\n"
     mkdir ./build
 fi
 
