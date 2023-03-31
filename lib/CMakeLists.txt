@@ -1,0 +1,7 @@
+add_library (mycutils ../../src/mycutils.h ../../src/mycutils.c)
+add_library (subproc ../../src/subproc.h ../../src/subproc.c)
+add_library (rover ../../src/rover.h ../../src/rover.c)
+
+target_include_directories (mycutils PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories (subproc PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories (rover PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
