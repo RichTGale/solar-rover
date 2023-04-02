@@ -11,6 +11,7 @@
 #ifndef MYCUTILS_H
 #define MYCUTILS_H
 
+#include <pi-gpio.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,8 +19,21 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <errno.h>
+#include <unistd.h>
+#include <termios.h>
 
 #define NANOS_PER_SEC 1000000000
+
+/**
+ * Prints information about the Raspberry Pi this program is running on.
+ */
+void print_rpi_info( rpi_info info );
+
+/*
+ * Returns a char that was input by the user.
+ * Dowsn't wait for the user to press enter.
+ */
+char getch(); 
 
 /**
  * Obtains the current time, storing it in a timespec.

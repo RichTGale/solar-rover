@@ -10,6 +10,71 @@
 #include "mycutils.h"
 
 /**
+ * Prints information about the Raspberry Pi this program is running on.
+ */
+void print_rpi_info( rpi_info info )
+{
+    // Printing P1Revision
+    fprintf( stdout, "p1_revision: " );
+    switch ( info.p1_revision )
+    {
+    	case 0 :
+            fprintf( stdout, "None" );
+            break;
+        case 1 :
+            fprintf( stdout, "Pi B" );
+            break;
+        case 2 :
+            fprintf( stdout, "Pi B v2" );
+            break;
+        case 3 :
+            fprintf( stdout, "40 pin" );
+            break;
+        
+    }
+    fprintf( stdout, "\n" );
+
+    // Printing revision
+    fprintf( stdout, "Revision: %s\n", info.revision );
+    
+    // Printing type
+    fprintf( stdout, "Type: %s\n", info.type );
+    
+    // Printing amount of ram
+    fprintf( stdout, "Ram: %s\n", info.ram );
+    
+    // Printing manufacturer
+    fprintf( stdout, "Manufacturer: %s\n", info.manufacturer );
+    
+    // Printing processor
+    fprintf( stdout, "Processor: %s\n", info.processor );
+}
+
+/*
+ * Returns a char that was input by the user.
+ * Dowsn't wait for the user to press enter.
+ */
+char getch() {
+        char buf = 0;
+        struct termios old = {0};
+        if (tcgetattr(0, &old) < 0)
+                perror("tcsetattr()");
+        old.c_lflag &= ~ICANON;
+        old.c_lflag &= ~ECHO;
+        old.c_cc[VMIN] = 1;
+        old.c_cc[VTIME] = 0;
+        if (tcsetattr(0, TCSANOW, &old) < 0)
+                perror("tcsetattr ICANON");
+        if (read(0, &buf, 1) < 0)
+                perror ("read()");
+        old.c_lflag |= ICANON;
+        old.c_lflag |= ECHO;
+        if (tcsetattr(0, TCSADRAIN, &old) < 0)
+                perror ("tcsetattr ~ICANON");
+        return (buf);
+}
+
+/**
  * Obtains the current time, storing it in a timespec.
  */
 void start_timer( struct timespec* ts )

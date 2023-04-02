@@ -3,6 +3,10 @@
 #define ROVER_H
 
 #include <pi-gpio.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "motor.h"
 
 #define ENA_PIN 12
 #define ENB_PIN 13 
@@ -14,46 +18,28 @@
 /**
  * Motor direction identities.
  */
-enum MotorDirection { UNKNOWN, FORWARDS, BACKWARDS, STOPPED };
+enum MotorDirection { FORWARDS, BACKWARDS, STOP, LEFT, RIGHT };
+
+/**
+ * The Rover data structure
+ */
+typedef struct rover_data* rover;
 
 /**
  * Intialises the rover.
  */
-void rover_init();
+void rover_init( rover* rp );
 
 /**
  * Cleans up the rover.
  */
-void rover_free();
+void rover_free( rover* rp );
 
 /**
- * Returns the direction in which a motor is turning.
+ * Alters the rover's velocity.
  */
-enum MotorDirection motor_direction( const int BCM1, const int BCM2 );
+void rover_change_vel( rover* rp, enum MotorDirection direction );
 
-/**
- * Moves the rover forward.
- */
-void forward( const int DUTY_CYCLE );
-
-/**
- * Moves the rover backwards.
- */
-void backward( const int DUTY_CYCLE );
-
-/** 
- * Rotates the rover left.s
- */
-void left( const int DUTY_CYCLE );
-
-/** 
- * Rotates the rover right.
- */
-void right( const int DUTY_CYCLE );
-
-/**
- * Stops the rover.
- */
-void stop( const int DUTY_CYCLE );
+void rover_print( rover r );
 
 #endif // ROVER_H

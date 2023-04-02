@@ -10,6 +10,6 @@ if [ ! -d "${DIRECTORY}" ]; then
     mkdir ./output
 fi
 
-./rover_exec.run
+./rover.run
 
 cd ../
