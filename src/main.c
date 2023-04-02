@@ -7,10 +7,9 @@
 #include <pi-gpio.h>
 #include <stdio.h>
 #include <time.h>
-#include <unistd.h>
-#include <termios.h>
 
 #include "mycutils.h"
+#include "subproc.h"
 #include "rover.h"
 
 #define FRAMES_PER_SEC 10
@@ -19,6 +18,7 @@
 int main()
 {
     rpi_info info;  // Information about the raspberry pi.
+    subproc motion;
     rover r;    // The rover.
     struct timespec end_last_frame; // Framerate timer.
     char command;   // The command read from user input. 
@@ -32,6 +32,12 @@ int main()
     // Printing Raspberry Pi info.
     print_rpi_info( info );
     
+    // Initialising the motion sub-process.
+    subproc_init( &motion );
+
+    // Starting motion.
+    subproc_exec( &motion, "sudo motion" ); 
+
     // Setting up the rover.
     rover_init( &r );
     
@@ -71,6 +77,12 @@ int main()
             start_timer( &end_last_frame );
         }
     }
+
+    // Ending the motion process.
+    subproc_term( &motion );
+
+    // Cleaning up the motion sub-process.
+    subproc_free( &motion );
    
     // Cleaning up the rover.
     rover_free( &r );
