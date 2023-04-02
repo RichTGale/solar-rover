@@ -1,7 +1,11 @@
 /**
  * main.c
  * 
- * Uses the pi-gpio library ( https://github.com/Milliways2/pi-gpio )
+ * Controls a remote-control vehicle.
+ * Uses the pi-gpio library ( https://github.com/Milliways2/pi-gpio ).
+ *
+ * Author: Richard Gale.
+ * Version: April 2nd, 2023.
  */
 
 #include <pi-gpio.h>
@@ -68,7 +72,7 @@ int main()
                             break;
             }
 
-            // Printing the current command to stdout.
+            // Printing the current command and information about the rover..
             fprintf( stdout, "command: %c ", command );
             rover_print( r );
             fprintf( stdout, "\n" );
@@ -78,7 +82,7 @@ int main()
         }
     }
 
-    // Ending the motion process.
+    // Ending the motion sub-process.
     subproc_term( &motion );
 
     // Cleaning up the motion sub-process.
@@ -89,6 +93,8 @@ int main()
     
     // Cleaning up pi-gpio.
     cleanup();
-    
-    return 0;
+
+    // Exiting the program.
+    exit( EXIT_SUCCESS );
 }
+

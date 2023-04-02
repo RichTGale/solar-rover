@@ -1,3 +1,11 @@
+/**
+ * rover.h
+ *
+ * Data structure and function declarations for a remote-control rover.
+ *
+ * Author: Richard Gale.
+ * Version: 2nd April, 2023.
+ */
 
 #ifndef ROVER_H
 #define ROVER_H
@@ -8,6 +16,7 @@
 
 #include "motor.h"
 
+// Raspberry pi gpio pin numbers for the motor driver.
 #define ENA_PIN 12
 #define ENB_PIN 13 
 #define IN1_PIN 17
@@ -21,7 +30,7 @@
 enum MotorDirection { FORWARDS, BACKWARDS, STOP, LEFT, RIGHT };
 
 /**
- * The Rover data structure
+ * The Rover data structure.
  */
 typedef struct rover_data* rover;
 
@@ -40,6 +49,9 @@ void rover_free( rover* rp );
  */
 void rover_change_vel( rover* rp, enum MotorDirection direction );
 
+/**
+ * Prints information about the rover.
+ */
 void rover_print( rover r );
 
 #endif // ROVER_H

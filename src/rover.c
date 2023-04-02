@@ -1,3 +1,11 @@
+/**
+ * rover.c
+ *
+ * Data-structure and function definitions for a remote-control rover.
+ *
+ * Author: Richard Gale.
+ * Version: 2nd April, 2023.
+ */
 
 #include "rover.h"
 
@@ -22,11 +30,12 @@ void rover_init( rover* rp )
     motor_init( &(*rp)->lmotor, ENA_PIN, IN1_PIN, IN2_PIN, 100 );
     motor_init( &(*rp)->rmotor, ENB_PIN, IN3_PIN, IN4_PIN, 100 );    
 
+    // Setting the rover's acceleration rate.
     (*rp)->acc=10;
 }
 
 /**
- * Cleans up the rover.
+ * Destroys the rover.
  */
 void rover_free( rover* rp )
 {
@@ -68,8 +77,12 @@ void rover_change_vel(rover* rp, enum MotorDirection direction)
     }
 }
 
+/**
+ * Prints information about the rover.
+ */
 void rover_print( rover r )
 {
+    // Printing information about the rover's motors.
     motor_print( r->lmotor );
     fprintf( stdout, " " );
     motor_print( r->rmotor );

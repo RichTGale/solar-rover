@@ -1,6 +1,17 @@
+/**
+ * motor.c
+ *
+ * Data structure and function definitions for a remote-control rover's motor.
+ *
+ * Author: Richard Gale.
+ * Version: 2nd April, 2023.
+ */
 
 #include "motor.h"
 
+/**
+ * Data contained within a motor.
+ */
 struct motor_data {
     int en_pin;
     int in1_pin;
@@ -9,6 +20,9 @@ struct motor_data {
     int vel;
 };
 
+/**
+ * Contructs the motor.
+ */
 void motor_init( 
                 motor* mp, 
                 const int EN_PIN,
@@ -38,14 +52,22 @@ void motor_init(
     pwm_start( EN_PIN );
 }
 
+/**
+ * Deconstructs the motor.
+ */
 void motor_free( motor* mp )
 {
-    // Stopping the PWM instance
+    // Stopping the PWM instance.
     pwm_stop( (*mp)->en_pin );
 
+    // Unallocating memory for the motor.
     free( *mp );
 }
 
+/**
+ * Switches the flow of current through the motor so that it spins
+ * in a forward direction relative to the rover.
+ */
 void motor_forwards( const int BCM1, const int BCM2 )
 {
     // Setting the motor into a state of forwards rotation
@@ -54,9 +76,9 @@ void motor_forwards( const int BCM1, const int BCM2 )
 }
 
 /**
- * Ensure the motor pertaining to the provided gpio pins in in
- * a state of backwards rotation.
- */ 
+ * Switches the flow of current through the motor so that it spins
+ * in a backwards direction relative to the rover.
+ */
 void motor_backwards( const int BCM1, const int BCM2 )
 {
     // Setting the motor into a state of backwards rotation
@@ -65,8 +87,7 @@ void motor_backwards( const int BCM1, const int BCM2 )
 }
 
 /**
- * Ensures the motor pertaining to the providedd gpio pins is in
- * a state of stopping.
+ * Switches the flow of current through the motor so that it stops spinning.
  */
 void motor_stop( const int BCM1, const int BCM2 )
 {
@@ -75,17 +96,17 @@ void motor_stop( const int BCM1, const int BCM2 )
     output_gpio( BCM2, LOW );
 }
 
+/**
+ * Alters the duty cycle of the provided motor.
+ */
 void motor_change_vel( motor* mp, int delta )
 {
-    int dutycycle;
-
-    (*mp)->vel+=delta;
+    int dutycycle;  // The duty-cycle of the motor.
 
     // Setting the velocity of the motor.
+    (*mp)->vel+=delta;
     if ( (*mp)->vel > (*mp)->vel_max )
         (*mp)->vel=(*mp)->vel_max;
-
-    // Setting the velocity of the motor.
     else if ( (*mp)->vel < (*mp)->vel_max*-1 )
         (*mp)->vel=(*mp)->vel_max*-1;
 
@@ -105,25 +126,19 @@ void motor_change_vel( motor* mp, int delta )
         (*mp)->vel=delta;
     }
 
+    // Setting the duty-cycle.
     if ( (*mp)->vel<0 )
-    {
         dutycycle=(*mp)->vel*-1;
-    }
     else
-    {
         dutycycle=(*mp)->vel;
-    }
-
-    if ( (*mp)->en_pin==12 )
-    {
-        dutycycle-=0;
-    }
-
-    // Setting the duty cycle of the motor.
     pwm_set_duty_cycle( (*mp)->en_pin, dutycycle );
 }
 
+/**
+ * Prints information about the provided motor.
+ */
 void motor_print( motor m ) 
 {
+    // Printing the motor's velocity.
     fprintf( stdout, "vel: %d", m->vel );
 }
