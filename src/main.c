@@ -48,16 +48,15 @@ int main()
     // Starting the timer.
     start_timer( &end_last_frame );
     
-    // Reading the file for a command and responding to that command.
+    // Reading user input  and responding to it.
     while ( command!='q' )
     {
         if ( check_timer( end_last_frame, NANOS_PER_FRAME  ) )
         {
-            // Getting user input.
+            // Reading user input.
             command=getch();
 
-
-            // Responding to the command.
+            // Responding to the user input.
             switch ( command )
             {
                 case 'w' :  rover_change_vel( &r, FORWARDS );
