@@ -1,11 +1,10 @@
 add_library (mycutils ../../src/mycutils.h ../../src/mycutils.c)
-add_library (subproc ../../src/subproc.h ../../src/subproc.c)
-add_library (motor ../../src/motor.h ../../src/motor.c)
-add_library (rover ../../src/rover.h ../../src/rover.c)
+add_library (term ../../src/term.h ../../src/term.c)
+add_library (app ../../src/app.h ../../src/app.c)
 
-target_link_libraries(rover LINK_PUBLIC motor)
+target_link_libraries(term LINK_PUBLIC mycutils)
+target_link_libraries(app LINK_PUBLIC pi-gpio term)
 
 target_include_directories (mycutils PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories (subproc PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories (motor PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories (rover PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories (term PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories (app PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

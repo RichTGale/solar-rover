@@ -1,0 +1,40 @@
+/**
+ * app.h
+ *
+ * This file contains the publicly available data-structures and 
+ * function for an app. 
+ * An app is a type that contains everything that makes up a complete 
+ * Command Line Interface (CLI) application.
+ *
+ * Version: 3rd April, 2023.
+ * Author(s): Richard Gale
+ */
+
+#ifndef APP_H
+#define APP_H
+
+#include <pi-gpio.h>
+
+#include "term.h"
+
+/**
+ * The app data-type.
+ */
+typedef struct app_data* app;
+
+/**
+ * Prepares the provided app for use.
+ */
+void app_init( app* ap );
+
+/**
+ * Runs the provided app.
+ */
+void app_exec( app* ap );
+
+/**
+ * Cleans up the provided app.
+ */
+void app_term( app* ap );
+
+#endif // APP_H

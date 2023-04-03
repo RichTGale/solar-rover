@@ -11,7 +11,6 @@
 #ifndef MYCUTILS_H
 #define MYCUTILS_H
 
-#include <pi-gpio.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,10 +23,6 @@
 
 #define NANOS_PER_SEC 1000000000
 
-/**
- * Prints information about the Raspberry Pi this program is running on.
- */
-void print_rpi_info( rpi_info info );
 
 /*
  * Returns a char that was input by the user.

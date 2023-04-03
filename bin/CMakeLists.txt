@@ -6,4 +6,4 @@ find_package(Threads REQUIRED)
 target_link_libraries(rover.run PRIVATE m)
 target_link_libraries(rover.run PRIVATE Threads::Threads)
 
-target_link_libraries (rover.run LINK_PUBLIC pi-gpio mycutils subproc motor rover)
+target_link_libraries (rover.run LINK_PUBLIC app)
