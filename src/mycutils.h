@@ -5,7 +5,7 @@
  * utility funtions.
  *
  * Author: Richard Gale
- * Version: 14th October, 2022
+ * Version: 4th April, 2023
  */
 
 #ifndef MYCUTILS_H
@@ -23,17 +23,12 @@
 
 #define NANOS_PER_SEC 1000000000
 
-
-/*
- * Returns a char that was input by the user.
- * Dowsn't wait for the user to press enter.
- */
-char getch(); 
+/******************************Time************************************/
 
 /**
- * Obtains the current time, storing it in a timespec.
+ * Returns a timestamp.
  */
-void start_timer( struct timespec* ts );
+char* timestamp();
 
 /**
  * Returns true if the provided wait-time has elapsed since the
@@ -42,15 +37,11 @@ void start_timer( struct timespec* ts );
 bool check_timer( struct timespec ts_start, uint64_t wait_time );
 
 /**
- * Removes all cases of the provided char from the string at the
- * provided pointer.
+ * Obtains the current time, storing it in a timespec.
  */
-void rmchar( char** str, char remove );
+void start_timer( struct timespec* ts );
 
-/**
- * Returns a timestamp.
- */
-char* timestamp();
+/*******************************In/Out*********************************/
 
 /**
  * Opens the file with the provided file name in the provided mode.
@@ -61,9 +52,10 @@ char* timestamp();
 FILE* open_file( char* fname, char* mode );
 
 /**
- * Writes the provided string to the provided file stream.
+ * Closes the provided file stream. If there is an error, it is printed on
+ * stderr and the program will exit.
  */
-void write_ch( FILE* fstreamp, char ch );
+void close_file( FILE* fp );
 
 /**
  * Returns the contents of the provided file stream as a string.
@@ -71,9 +63,22 @@ void write_ch( FILE* fstreamp, char ch );
 void read_ch( FILE* fstreamp, char* ch );
 
 /**
- * Closes the provided file stream. If there is an error, it is printed on
- * stderr and the program will exit.
+ * Writes the provided string to the provided file stream.
  */
-void close_file( FILE* fp );
+void write_ch( FILE* fstreamp, char ch );
+
+/*
+ * Returns a char that was input by the user.
+ * Doesn't wait for the user to press enter.
+ */
+char getch();
+
+/******************************Parsing*********************************/
+
+/**
+ * Removes all cases of the provided char from the string at the
+ * provided pointer.
+ */
+void rmchar( char** str, char remove );
 
 #endif //MYCUTILS

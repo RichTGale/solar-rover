@@ -19,6 +19,8 @@ struct app_data {
     rpi_info rpiinfo;   // Information about the raspberry pi
     term t;             // The terminal
     rover r;            // The rover
+    bool isrunning;     // Whether the app should continue running
+    bool drawstart;     // Whether the app should draw the start page
 };
 
 /**
@@ -45,6 +47,12 @@ void app_init( app* ap )
     // Preparing the rover
     fprintf( stdout, " - Setting up the rover..\n" );
     rover_init( &(*ap)->r );
+
+    // Initialising whether the app should continue running
+    (*ap)->isrunning = true;
+
+    // Initialising whether the app should draw the start page
+    (*ap)->drawstart = true;
 }
 
 /**
@@ -54,11 +62,14 @@ void app_startscreen( app a )
 {
     coord2D origin;
     coord2D bounds;
+    coord2D message_origin;
     char* title = "solar";
     char filepath_buf[ 100 ];
+    char* message = "<Press any key>";
     int c;
 
-    origin = term_getorigin( a->t );
+    origin.x = 1;
+    origin.y = 1;
     bounds = term_getbounds( a->t );
 
     // Clearing the terminal
@@ -71,7 +82,38 @@ void app_startscreen( app a )
 
     /* Printing information about the raspberry pi this program
      * is running on. */
+    placecursor( 1, 16);
     print_rpi_info( a->rpiinfo );
+
+    message_origin.x = 42/2 - ( strlen( message ) / 2 );
+    message_origin.y = 24;
+
+    textmode( BLINK );
+    printstr( message, message_origin );
+    textmode( NORMAL );
+}
+
+
+void app_processusrin( app* ap, char usrin )
+{
+    // Processing user input and sending it to the rover.
+    switch ( usrin )
+    {
+        case 'w' :  rover_change_vel( &(*ap)->r, FORWARDS );
+                    break;
+        case 'a' :  rover_change_vel( &(*ap)->r, LEFT );
+                    break;
+        case 's' :  rover_change_vel( &(*ap)->r, BACKWARDS );
+                    break;
+        case 'd' :  rover_change_vel( &(*ap)->r, RIGHT );
+                    break;
+        case 'x' :  rover_change_vel( &(*ap)->r, STOP );
+                    break;
+        case 'b' :  (*ap)->drawstart = true;
+                    break;
+        case 'q' :  (*ap)->isrunning = false;
+                    break;
+    }
 }
 
 /**
@@ -80,48 +122,36 @@ void app_startscreen( app a )
 void app_exec( app* ap )
 {
     struct timespec end_last_frame; // Framerate timer.
-    bool first;
     char usrin;
-
-    first = true;
 
     // Starting the timer.
     start_timer( &end_last_frame );
     
-    while ( usrin != 'q' )
+    while ( (*ap)->isrunning )
     {
 	    if ( check_timer( end_last_frame, NANOS_PER_FRAME ) )
 	    {
 	        term_clear();
-	
-	        if ( first )
+
+            if ( !(*ap)->drawstart )
+            {
+	            // TODO: Draw CLI
+                
+                // Getting user input
+	            usrin = getch();
+                
+                // Processing user input
+                app_processusrin( ap, usrin );
+
+            }
+            else if ( (*ap)->drawstart )
 	        {
 	            app_startscreen( *ap );
-	            first = false;
-	        }
-	
-	        // TODO: Draw CLI
-
+                (*ap)->drawstart = false;
 	        
-	        // Getting user input
-	        usrin = getch();
-	
-            // Processing user input and sending it to the rover.
-            switch ( usrin )
-            {
-                case 'w' :  rover_change_vel( &(*ap)->r, FORWARDS );
-                            break;
-                case 'a' :  rover_change_vel( &(*ap)->r, LEFT );
-                            break;
-                case 's' :  rover_change_vel( &(*ap)->r, BACKWARDS );
-                            break;
-                case 'd' :  rover_change_vel( &(*ap)->r, RIGHT );
-                            break;
-                case 'x' :  rover_change_vel( &(*ap)->r, STOP );
-                            break;
-                case 'b' :  first = true;;
-                            break;
-            }
+                // Waiting for the user to press any key
+	            usrin = getch();
+	        }
             start_timer( &end_last_frame );
 	    }
     }

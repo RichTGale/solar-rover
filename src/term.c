@@ -42,6 +42,14 @@ void term_clear()
     system( "tput clear" );
 }
 
+void placecursor( int x, int y )
+{
+    char cmd_buf[ 30 ];
+
+    sprintf( cmd_buf, "tput cup %d %d", y, x );
+    system( cmd_buf ); 
+}
+
 void term_res( term* tp )
 {
     FILE* rfp;
@@ -105,8 +113,7 @@ void drawline( char* text, ssize_t numbytes, coord2D origin, coord2D bounds )
     int c;
 
     // Moving the cursor to the origin
-    sprintf( buf, "tput cup %d %d", origin.y, origin.x );
-    system( buf );
+    placecursor( origin.x, origin.y );
     
     for ( c = 0; c < numbytes && c < bounds.x; c++ )
     {
@@ -120,7 +127,6 @@ void drawline( char* text, ssize_t numbytes, coord2D origin, coord2D bounds )
             system( "tput cuf1" );
         }
     }
-    system( "printf \"\n\"" );
 }
 
 void drawfile( char* filepath, coord2D origin, coord2D bounds )
@@ -131,8 +137,8 @@ void drawfile( char* filepath, coord2D origin, coord2D bounds )
     ssize_t numbytes;
     
     while ( ( numbytes = getline( &text, &len, fp ) ) != -1 ) {
-        origin.y++;
         drawline( text, numbytes, origin, bounds );
+        origin.y++;
     }
 
     close_file( fp );
@@ -155,4 +161,14 @@ void drawstr( char* str, coord2D origin, coord2D bounds )
                 );
         origin.x += 8;
     }
+}
+
+
+void printstr( char* str, coord2D origin )
+{
+    char str_buf[ 1000 ];
+
+    placecursor( origin.x, origin.y );
+    sprintf( str_buf, "printf \"%s\"", str );
+    system( str_buf );
 }

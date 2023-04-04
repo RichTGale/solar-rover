@@ -6,7 +6,7 @@
  * An app is a type that contains everything that makes up a complete 
  * Command Line Interface (CLI) application.
  *
- * Version: 3rd April, 2023.
+ * Version: 4th April, 2023.
  * Author(s): Richard Gale
  */
 
@@ -24,7 +24,7 @@
 #include "term.h"
 #include "rover.h"
 
-#define FRAMES_PER_SEC 6
+#define FRAMES_PER_SEC 2
 #define NANOS_PER_FRAME NANOS_PER_SEC/FRAMES_PER_SEC
 
 /**

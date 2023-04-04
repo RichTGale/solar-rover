@@ -27,6 +27,7 @@ int main( int argc, char* argv[] )
     app_exec( &a );
 
     // Cleaning up the app
+    system( "tput clear" );
     fprintf( stdout, "Cleaning up..\n" );
     app_term( &a );
 

@@ -47,6 +47,8 @@ coord2D term_getorigin( term t );
 
 void term_clear();
 
+void placecursor( int x, int y );
+
 void term_res( term* tp );
 
 void textmode( enum textmodes m );
@@ -56,5 +58,7 @@ void bgcolour( enum termcolours c );
 void fgcolour( enum termcolours c );
 
 void drawstr( char* str, coord2D origin, coord2D bounds );
+
+void printstr( char* str, coord2D origin );
 
 #endif // TERMUTIL_H
