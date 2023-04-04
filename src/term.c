@@ -37,6 +37,11 @@ coord2D term_getorigin( term t )
     return t->origin;
 }
 
+void term_clear()
+{
+    system( "tput clear" );
+}
+
 void term_res( term* tp )
 {
     FILE* rfp;
@@ -94,13 +99,18 @@ void fgcolour( enum termcolours c )
     system( buf );
 }
 
-void drawline( char* line, ssize_t len, coord2D bounds )
+void drawline( char* text, ssize_t numbytes, coord2D origin, coord2D bounds )
 {
+    char buf[20];
     int c;
 
-    for ( c = 0; c < len && c < bounds.x; c++ )
+    // Moving the cursor to the origin
+    sprintf( buf, "tput cup %d %d", origin.y, origin.x );
+    system( buf );
+    
+    for ( c = 0; c < numbytes && c < bounds.x; c++ )
     {
-        if ( line[c] == '1' )
+        if ( text[c] == '1' )
         {
             bgcolour( WHITE );
             system( "printf \" \"" );
@@ -110,25 +120,39 @@ void drawline( char* line, ssize_t len, coord2D bounds )
             system( "tput cuf1" );
         }
     }
+    system( "printf \"\n\"" );
 }
 
 void drawfile( char* filepath, coord2D origin, coord2D bounds )
 {
     FILE* fp = open_file( filepath, "r" );
-    char* line = NULL;
+    char* text = NULL;
     size_t len = 0;
-    ssize_t read;
-    char buf[20];
-
-    sprintf( buf, "tput cup %d %d", origin.y, origin.x );
-    system( buf );
+    ssize_t numbytes;
     
-    while ( ( read = getline( &line, &len, fp ) ) != -1) {
-        drawline( line, read, bounds );
-        system( "printf \"\n\"" );
+    while ( ( numbytes = getline( &text, &len, fp ) ) != -1 ) {
+        origin.y++;
+        drawline( text, numbytes, origin, bounds );
     }
 
     close_file( fp );
 
     textmode( NORMAL );
+}
+
+void drawstr( char* str, coord2D origin, coord2D bounds )
+{
+    char filepath_buf[ 100 ];
+    int c;
+
+    for ( c = 0; c < strlen( str ); c++ )
+    {
+        sprintf( filepath_buf, "../../art/%c.txt", str[c] ); 
+        drawfile(
+                filepath_buf,
+                origin,
+                bounds 
+                );
+        origin.x += 8;
+    }
 }

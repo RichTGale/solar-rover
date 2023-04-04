@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <stdbool.h>
 
 #include "mycutils.h"
@@ -44,6 +45,8 @@ coord2D term_getbounds( term t );
 
 coord2D term_getorigin( term t );
 
+void term_clear();
+
 void term_res( term* tp );
 
 void textmode( enum textmodes m );
@@ -52,6 +55,6 @@ void bgcolour( enum termcolours c );
 
 void fgcolour( enum termcolours c );
 
-void drawfile( char* filepath, coord2D origin, coord2D bounds );
+void drawstr( char* str, coord2D origin, coord2D bounds );
 
 #endif // TERMUTIL_H

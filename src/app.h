@@ -13,9 +13,19 @@
 #ifndef APP_H
 #define APP_H
 
+#include <stdio.h>
+#include <string.h>
+#include <stdbool.h>
+#include <time.h>
 #include <pi-gpio.h>
 
+#include "mycutils.h"
+#include "rpiutils.h"
 #include "term.h"
+#include "rover.h"
+
+#define FRAMES_PER_SEC 6
+#define NANOS_PER_FRAME NANOS_PER_SEC/FRAMES_PER_SEC
 
 /**
  * The app data-type.
