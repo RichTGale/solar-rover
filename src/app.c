@@ -138,7 +138,7 @@ void app_exec( app* ap )
 	            // TODO: Draw CLI
                 
                 // Getting user input
-	            usrin = getch();
+	            usrin = get_userc_nowait();
                 
                 // Processing user input
                 app_processusrin( ap, usrin );
@@ -150,7 +150,7 @@ void app_exec( app* ap )
                 (*ap)->drawstart = false;
 	        
                 // Waiting for the user to press any key
-	            usrin = getch();
+	            usrin = get_userc_nowait();
 	        }
             start_timer( &end_last_frame );
 	    }
