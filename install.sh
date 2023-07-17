@@ -1,10 +1,10 @@
 #!/bin/bash
 
-EXEC_DIR=${PWD}
-INSTALL_DIR="${home}/Programs"
+EXEC_DIR="$PWD"
+INSTALL_DIR="${HOME}/Programs"
 
-if [ i! -d "$INSTALL_DIR" ]; then
-    mkdir -p INSTALL_DIR
+if [ ! -d "$INSTALL_DIR" ]; then
+    mkdir -p ${INSTALL_DIR}
 fi
 
 cd ${INSTALL_DIR}
