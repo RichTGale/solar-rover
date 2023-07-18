@@ -14,13 +14,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <string.h>
+#include <string.h> // strerror()
 #include <time.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <errno.h>
 #include <unistd.h>
 #include <termios.h>
+
+#include "array.h"
 
 #define NANOS_PER_SEC 1000000000
 
@@ -49,13 +51,13 @@ char* timestamp();
  * This function asks the user to input a char in response to a prompt supplied
  * to it, then stores it in the supplied char pointer. 
  */
-void get_userc(char* cptr, char* prompt);
+void read_userc(char* cptr, char* prompt);
 
 /**
  * This function returns a char that was input by the user. It doesn't wait
  * for the user to press enter. (Not my code)
  */
-char get_userc_nowait();
+char read_userc_nowait();
 
 /**
  * Closes the provided file stream. If there is an error, it is printed on
@@ -70,13 +72,21 @@ void close_file(FILE* fp);
  * is exited. If the file is successfully opened, this function
  * will return a pointer to the file stream.
  */
-FILE* open_file( char* fname, char* mode );
+FILE* open_file(char* fname, char* mode);
 
 /**
  * This function assigns the next char in the file stream provided to it to
- * the char at the char pointer cp.
+ * the buffer provided to it.
  */
-void read_filec(FILE* fstreamp, char* str);
+bool read_filec(FILE* fstreamp, char* buf);
+
+/**
+ * This function assigns the next line in the file stream provided to it to
+ * the string provided to it. It returns true if the line was read successfully
+ * or false if EOF was reached. If an error occurs the program will exit.
+ * Make sure to free() the buffer when you're finished with it.
+ */
+bool read_fileln(FILE* fstreamp, char** buf);
 
 /**
  * This function writes the char provided to it to the file stream provided to
@@ -98,7 +108,7 @@ void write_str(FILE* fstreamp, char* str);
  * string based on the argument list, then concatenates the argument list into 
  * the supplied format and stores it in the supplied string pointer.
  */
-void sstringf(char** sptr, char *fmt, ...);
+void stringf(char** sptr, char *fmt, ...);
 
 /**
  * This function removes all cases of the provided char from the string at the

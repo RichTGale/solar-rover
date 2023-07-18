@@ -10,6 +10,8 @@
 
 #include "mycutils.h"
 
+#define LINE_HEIGHT 8
+#define CHAR_WIDTH LINE_HEIGHT
 
 enum termcolours { 
     BLACK,

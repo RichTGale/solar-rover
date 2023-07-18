@@ -49,8 +49,7 @@ void start_timer(struct timespec* ts)
     {
         /* An error occured so we are printing it to stderr. */
         fprintf(stderr, 
-                "[ %s ] ERROR: in function start_timer(): clock_gettime() "
-                "returned an error: %s",
+                "[ %s ] ERROR: in function start_timer(): %s\n",
                 timestamp(), strerror(errno));
     }
 }
@@ -70,7 +69,7 @@ char* timestamp()
          * a message to stderr and exiting the program. */
         fprintf(stderr, 
                 "ERROR: In function timestamp(): "
-                "Failure to obtain the current time.\n");
+                "Calender time is not available\n");
         exit(EXIT_FAILURE);
     }
 
@@ -81,7 +80,7 @@ char* timestamp()
          * printing a message to stderr and exiting the program. */
         fprintf(stderr, 
                 "ERROR: In function timestamp(): "
-                "Failure to convert the current time to a string.\n" );
+                "Failure to convert the current time to a string.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -99,7 +98,7 @@ char* timestamp()
  * This function asks the user to input a char in response to a prompt supplied
  * to it, then stores it in the supplied char pointer. 
  */
-void get_userc(char* cp, char* prompt)
+void read_userc(char* cp, char* prompt)
 {
     /* Printing the prompt. */
     fprintf(stdout, "%s", prompt);
@@ -112,7 +111,7 @@ void get_userc(char* cp, char* prompt)
  * This function returns a char that was input by the user. It doesn't wait
  * for the user to press enter. (Not my code)
  */
-char get_userc_nowait() {
+char read_userc_nowait() {
         char buf = 0;
         struct termios old = {0};
         if (tcgetattr(0, &old) < 0)
@@ -139,11 +138,13 @@ char get_userc_nowait() {
 void close_file(FILE* fp)
 {
     /* Closing the file stream. */
-    if ( fclose( fp ) != 0 )
+    if (fclose(fp) != 0)
     {
         /* There was an error closing the file stream so we are printing it
          * on stderr and exiting the program. */
-        fprintf(stderr, "[ %s ] Error closing file\n", timestamp());
+        fprintf(stderr,
+                "[ %s ] ERROR: In function close_file: %s\n", 
+                timestamp(), strerror(errno));
         exit(EXIT_FAILURE);
     }
 }
@@ -166,7 +167,8 @@ FILE* open_file(char* fname, char* mode)
          * stderr and exiting the program. */
         fprintf(stderr, 
                 "[ %s ] ERROR: In function open_file(): "
-                "Could not open file %s\n", timestamp(), fname);
+                "Could not open file %s: %s\n",
+                timestamp(), fname, strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -176,14 +178,76 @@ FILE* open_file(char* fname, char* mode)
 
 /**
  * This function assigns the next char in the file stream provided to it to
- * the char at the char pointer cp.
+ * the buffer provided to it. It returns true on success or false if EOF is
+ * reached. It will exit the program if an error occurs.
  */
-void read_filec(FILE* fstreamp, char* cp)
+bool read_filec(FILE* fstreamp, char* buf)
 {
-    if ((*cp = fgetc(fstreamp)) == EOF)
+    const bool SUCCESS = 1;     // Return value if success
+    const bool END_OF_FILE = 0; // Return value if EOF
+    bool status;                // Whether the char was read successfully
+
+    /* Presuming the character was read successfully. */
+    status = SUCCESS;
+
+    /* Reading the char. */
+    if ((*buf = fgetc(fstreamp)) == EOF)
     {
-        fprintf( stderr, "File read error.\n" );
+        /* Checking if an error occured. */
+        if (ferror(fstreamp))
+        {
+            /* Printing an error message and exiting the program. */
+            fprintf(stderr,
+                    "[ %s ] ERROR: In function read_filec(): %s\n",
+                    timestamp(), strerror(errno));
+            exit(EXIT_FAILURE);
+        }
+        /* EOF was reached. */
+        status = END_OF_FILE;
     }
+
+    /* Returning whether the char was read successfully. */
+    return status;
+}
+
+
+/**
+ * This function assigns the next line in the file stream provided to it to
+ * the string provided to it. It returns true if the line was read successfully
+ * or false if EOF was reached. If an error occurs the program will exit.
+ * Make sure to free() the buffer when you're finished with it.
+ */
+bool read_fileln(FILE* fstreamp, char** buf)
+{
+    const bool SUCCESS = 1;     // Return value if success
+    const bool END_OF_FILE = 0; // Return value if EOF
+    bool status;                // Whether the line was read successfully
+    size_t n;                   // Allocated size of the buffer
+
+    /* Initialising how big the buffer is. */
+    n = 0;
+
+    /* Presuming the character was read successfully. */
+    status = SUCCESS;
+    
+    /* Reading the next line from the file. */
+    if (getline(buf, &n, fstreamp) == -1)
+    {
+        /* Checking if an error occured. */
+        if (ferror(fstreamp))
+        {
+            /* Printing an error message and exiting the program. */
+            fprintf(stdout,
+                    "[ %s ] ERROR: In function read_fileln: %s\n",
+                    timestamp(), strerror(errno));
+            exit(EXIT_FAILURE);
+        }
+        /* EOF was reached. */
+        status = END_OF_FILE;
+    }
+
+    /* Returning whether the line was read successfully. */
+    return status;
 }
 
 /**
@@ -216,7 +280,7 @@ void write_str(FILE* fstreamp, char* str)
  * string based on the argument list, then concatenates the argument list into 
  * the supplied format and stores it in the supplied string pointer.
  */
-void sstringf(char** sptr, char *fmt, ...)
+void stringf(char** sptr, char *fmt, ...)
 {
     va_list lptr;       // Pointer to the list of arguments
     va_list lptr_cpy;   // A Copy of the list of arguments

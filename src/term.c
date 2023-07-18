@@ -39,49 +39,66 @@ coord2D term_getorigin( term t )
 
 void term_clear()
 {
+    /* Clearing the terminal. */
     system( "tput clear" );
 }
 
 void placecursor( int x, int y )
 {
-    char cmd_buf[ 30 ];
+    char* cmd;   // The command
 
-    sprintf( cmd_buf, "tput cup %d %d", y, x );
-    system( cmd_buf ); 
+    /* Creating the command. */
+    stringf(&cmd, "tput cup %d %d", y, x);
+
+    /* Setting the cursor position. */
+    system(cmd);
+
+    /* De-allocating memory. */
+    free(cmd); 
 }
 
+/**
+ * This function stores the number of rows and columns of the terminal
+ * in the bounds property of the term provided to it.
+ */
 void term_res( term* tp )
 {
-    FILE* rfp;
-    FILE* cfp;
-    char rbuf[ 5 ];
-    char cbuf[ 5 ];
-    char *end;
+    FILE* rfp;      /* File stream for the rows file. */
+    FILE* cfp;      /* File stream for the columns file. */
+    char rbuf[5];   /* The number of rows. */
+    char cbuf[5];   /* The number of columns. */
 
-    system( "if [ ! -d temp/ ]; then\nmkdir temp/\nfi" );
+    /* Creating a temporary directory to store the files. */
+    system("if [ ! -d temp/ ]; then\nmkdir temp/\nfi");
 
-    system( "tput lines >> temp/screen_rows.txt" );
-    system( "tput cols >> temp/screen_cols.txt" );
+    /* Writing the number of rows and columns to their files. */
+    system("tput lines >> temp/screen_rows.txt");
+    system("tput cols >> temp/screen_cols.txt");
 
-    rfp = open_file( "temp/screen_rows.txt", "r" );
+    /* Opening the files. */
+    rfp = open_file("temp/screen_rows.txt", "r" );
     cfp = open_file( "temp/screen_cols.txt", "r" );
 
-    fgets( rbuf, sizeof( rbuf ), rfp );
-    fgets( cbuf, sizeof( cbuf ), cfp );
+    /* Getting the number of rows and columns from the files. */
+    fgets(rbuf, sizeof(rbuf), rfp);
+    fgets(cbuf, sizeof(cbuf), cfp);
 
-    ( *tp )->bounds.x = strtol( cbuf, &end, 10 );
-    ( *tp )->bounds.y = strtol( rbuf, &end, 10 );
+    /* Converting the number of rows and columns to integers. */
+    (*tp)->bounds.x = atoi(rbuf); //strtol( cbuf, &end, 10 );
+    (*tp)->bounds.y = atoi(cbuf); //strtol( rbuf, &end, 10 );
 
-    close_file( rfp );
-    close_file( cfp );
+    /* Closing the files. */
+    close_file(rfp);
+    close_file(cfp);
 
-    system( "rm temp/screen_rows.txt " );
-    system( "rm temp/screen_cols.txt " );
+    /* Deleting the files. */
+    system("rm temp/screen_rows.txt");
+    system("rm temp/screen_cols.txt");
 }
 
-void textmode( enum  textmodes m )
+void textmode(enum textmodes m)
 {
-    switch ( m )
+    switch (m) 
     {
         case BOLD       : system( "tput bold" ); break;
         case NORMAL     : system( "tput sgr0" ); break;
@@ -91,84 +108,116 @@ void textmode( enum  textmodes m )
     }
 }
 
+/**
+ * This function sets the background colour of the terminal cursor.
+ */
 void bgcolour( enum termcolours c )
 {
-    char buf[15];
+    char* command;  // The command
 
-    sprintf( buf, "tput setab %d", c );
-    system( buf );
+    /* Creating the command. */
+    stringf(&command, "tput setab %d", c);
+
+    /* Setting the background colour. */
+    system(command);
+
+    /* De-allocating memory. */
+    free(command);
 }
 
+/**
+ * This function sets the foreground colour of the temrinal cursor.
+ */
 void fgcolour( enum termcolours c )
 {
-    char buf[15];
+    char* command;   // The command
 
-    sprintf( buf, "tput setaf %d", c );
-    system( buf );
+    /* Creating the command. */
+    stringf(&command, "tput setaf %d", c);
+    
+    /* Setting the foreground colour. */
+    system(command);
+
+    /* De-allocating memory. */
+    free(command);
 }
 
-void drawline( char* text, ssize_t numbytes, coord2D origin, coord2D bounds )
+/**
+ * This function draw a single row of an art file.
+ */
+void drawline(char* text, size_t text_len, coord2D origin, coord2D bounds)
 {
-    char buf[20];
-    int c;
+    int c;  // The current column of the row
 
-    // Moving the cursor to the origin
-    placecursor( origin.x, origin.y );
+    /* Moving the cursor to the origin. */
+    placecursor(origin.x, origin.y);
     
-    for ( c = 0; c < numbytes && c < bounds.x; c++ )
+    /* Drawing the row. */
+    for (c = 0; c < text_len && c < bounds.x; c++)
     {
-        if ( text[c] == '1' )
+        /* Checking if there should be something drawn in theis column. */
+        if (text[c] == '1')
         {
-            bgcolour( WHITE );
-            system( "printf \" \"" );
+            /* Drawing a filled space. */
+            bgcolour(WHITE);
+            system("printf \" \"");
         }
         else
         {
-            system( "tput cuf1" );
+            /* Drawing an empty space. */
+            system("tput cuf1");
         }
     }
 }
 
-void drawfile( char* filepath, coord2D origin, coord2D bounds )
+void drawfile(char* filepath, coord2D origin, coord2D bounds)
 {
-    FILE* fp = open_file( filepath, "r" );
-    char* text = NULL;
-    size_t len = 0;
-    ssize_t numbytes;
+    FILE* fp;   /* Pointer to the file stream. */
+    char* line; /* The text in the file. */
+   
+    /* Ensuring that the buffer is set to NULL. */
+    line = NULL;
     
-    while ( ( numbytes = getline( &text, &len, fp ) ) != -1 ) {
-        drawline( text, numbytes, origin, bounds );
+    /* Opening the file. */ 
+    fp = open_file(filepath, "r");
+   
+    /* Reading the line from the file. */ 
+	while (read_fileln(fp, &line)) 
+    {
+        /* Drawing the line. */
+        drawline(line, strlen(line), origin, bounds);
+
+        /* Getting ready to draw the next line. */
         origin.y++;
+        free(line);
+        line = NULL;
     }
 
+    /* Closing the file. */
     close_file( fp );
-
-    textmode( NORMAL );
 }
 
-void drawstr( char* str, coord2D origin, coord2D bounds )
+void drawstr(char* str, coord2D origin, coord2D bounds)
 {
-    char filepath_buf[ 100 ];
+    char* filepath;
     int c;
 
-    for ( c = 0; c < strlen( str ); c++ )
+    for (c = 0; c < strlen(str); c++)
     {
-        sprintf( filepath_buf, "../../art/%c.txt", str[c] ); 
-        drawfile(
-                filepath_buf,
-                origin,
-                bounds 
-                );
-        origin.x += 8;
+        stringf(&filepath, "../../art/%c.txt", str[c]);
+        drawfile(filepath, origin, bounds);
+        origin.x += CHAR_WIDTH;
+        free(filepath);
     }
 }
 
 
-void printstr( char* str, coord2D origin )
+void printstr(char* str, coord2D origin)
 {
-    char str_buf[ 1000 ];
+    char* command;
 
-    placecursor( origin.x, origin.y );
-    sprintf( str_buf, "printf \"%s\"", str );
-    system( str_buf );
+    placecursor(origin.x, origin.y);
+    stringf(&command, "printf \"%s\"", str);
+    system(command);
+    free(command);
 }

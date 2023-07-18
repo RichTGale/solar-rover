@@ -58,39 +58,37 @@ void app_init( app* ap )
 /**
  * Draws the app starting screen.
  */
-void app_startscreen( app a )
+void app_startscreen(app a)
 {
     coord2D origin;
     coord2D bounds;
     coord2D message_origin;
-    char* title = "solar";
-    char filepath_buf[ 100 ];
     char* message = "<Press any key>";
-    int c;
 
     origin.x = 1;
     origin.y = 1;
-    bounds = term_getbounds( a->t );
+    bounds = term_getbounds(a->t);
 
     // Clearing the terminal
     term_clear();
 
     // Drawing the program title
-    drawstr( "solar", origin, bounds );
+    textmode(NORMAL);
+    drawstr("solar", origin, bounds);
     origin.y += 8;
-    drawstr( "rover", origin, bounds );
+    drawstr("rover", origin, bounds);
 
     /* Printing information about the raspberry pi this program
      * is running on. */
-    placecursor( 1, 16);
-    print_rpi_info( a->rpiinfo );
+    placecursor(1, 16);
+    print_rpi_info(a->rpiinfo);
 
-    message_origin.x = 42/2 - ( strlen( message ) / 2 );
+    /* Printing the message. */
+    message_origin.x = 42/2 - (strlen(message) / 2);
     message_origin.y = 24;
-
-    textmode( BLINK );
-    printstr( message, message_origin );
-    textmode( NORMAL );
+    textmode(BLINK);
+    printstr(message, message_origin);
+    textmode(NORMAL);
 }
 
 
@@ -138,11 +136,10 @@ void app_exec( app* ap )
 	            // TODO: Draw CLI
                 
                 // Getting user input
-	            usrin = get_userc_nowait();
+	            usrin = read_userc_nowait();
                 
                 // Processing user input
                 app_processusrin( ap, usrin );
-
             }
             else if ( (*ap)->drawstart )
 	        {
@@ -150,7 +147,7 @@ void app_exec( app* ap )
                 (*ap)->drawstart = false;
 	        
                 // Waiting for the user to press any key
-	            usrin = get_userc_nowait();
+	            usrin = read_userc_nowait();
 	        }
             start_timer( &end_last_frame );
 	    }
