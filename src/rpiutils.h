@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <pi-gpio.h>
 
-#include "term.h"
+#include "mycutils.h"
 
 /**
  * Prints information about the Raspberry Pi this program is running on.

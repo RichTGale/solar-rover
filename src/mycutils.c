@@ -17,9 +17,10 @@
  */
 bool check_timer(struct timespec start, uint64_t wait_time)
 {
-    struct timespec current;    // The current time
-    struct timespec elapsed;    // The time elapsed since start
-    bool has_elapsed = false;   // Whether the time has elapsed
+    const bool HAS_ELAPSED = true;      /* Value if time has elapsed. */
+    const bool NOT_ELAPSED = false;     /* Value if time has not elapsed. */
+    struct timespec current;            /* The current time. */
+    struct timespec elapsed;            /* The time elapsed since start. */
 
     /* Obtaining the current time. */
     clock_gettime(CLOCK_REALTIME, &current);
@@ -28,14 +29,12 @@ bool check_timer(struct timespec start, uint64_t wait_time)
     elapsed.tv_sec = current.tv_sec - start.tv_sec;
     elapsed.tv_nsec = current.tv_nsec - start.tv_nsec;
 
-    /* Checking whether the time has elapsed. */
-    if ((elapsed.tv_sec * NANOS_PER_SEC) + elapsed.tv_nsec >= wait_time)
-    {
-        has_elapsed = true; // The designated time has elapsed.
-    }
+    /* Checking whether the time hasn't elapsed. */
+    if ((elapsed.tv_sec * NANOS_PER_SEC) + elapsed.tv_nsec < wait_time)
+        return NOT_ELAPSED;
 
-    /* Returning whether the designated time has elapsed. */
-    return has_elapsed;
+    /* The time has elapsed. */
+    return HAS_ELAPSED;
 }
 
 /**
@@ -44,29 +43,41 @@ bool check_timer(struct timespec start, uint64_t wait_time)
  */
 void start_timer(struct timespec* ts)
 {
+    char* tstamp;
+
     /* Obtaining the current time.*/
-    if ((clock_gettime(CLOCK_REALTIME, ts)) == -1)
-    {
-        /* An error occured so we are printing it to stderr. */
-        fprintf(stderr, 
-                "[ %s ] ERROR: in function start_timer(): %s\n",
-                timestamp(), strerror(errno));
-    }
+    if ((clock_gettime(CLOCK_REALTIME, ts)) != -1)
+        return;
+        
+    /* An error occured so we are printing an error message. */
+    fprintf(stderr, 
+            "[ %s ] ERROR: in function start_timer(): %s\n",
+            (tstamp = timestamp()), strerror(errno));
+
+    /* De-allocating memory. */
+    free(tstamp);
+
+    /* Exiting the program. */
+    exit(EXIT_FAILURE);
+    
 }
 
 /**
  * This function returns a string that represent the current time.
+ * For reasons detailed in a comment within this function, you must
+ * free() the string that this function returns.
  */
 char* timestamp()
 {
-    time_t current_time;    // The current time
-    char* stamp;            // The time stamp
+    time_t current_time;    /* The current time. */
+    char* stamp;            /* The time stamp. */
+    char* stamp_cpy;        /* A Copy of the time stamp. */
 
     /* Obtaining the current time. */
     if ((current_time = time(NULL)) == ((time_t) - 1))
     {
-        /* There was an error obtaining the time so we're printing 
-         * a message to stderr and exiting the program. */
+        /* An error occured so we're printing an error message to and exiting
+         * the program. */
         fprintf(stderr, 
                 "ERROR: In function timestamp(): "
                 "Calender time is not available\n");
@@ -76,42 +87,101 @@ char* timestamp()
     /* Converting time to local time format. */
     if ((stamp = ctime(&current_time)) == NULL)
     {
-        /* There was an error converting the time to a string so we're
-         * printing a message to stderr and exiting the program. */
+        /* An error occured converting so we're printing an error message
+         * and exiting the program. */
         fprintf(stderr, 
                 "ERROR: In function timestamp(): "
                 "Failure to convert the current time to a string.\n");
         exit(EXIT_FAILURE);
     }
 
-    /* Removing the newline character that was added by ctime(). */
-    stringrmc(&stamp, '\n');
+    /* The string that ctime() returns is not one that should be be freed
+     * with free() because the memory it uses was not allocated with malloc()
+     * or a similar function. Because we are going to use sdelchar() to remove
+     * the newline character that ctime() added to our timestamp, and
+     * sdelchar() uses free() to remove chars from strings, we have to make
+     * a copy of our stamp.
+     * If this copy is not freed by the calling function, it will create a 
+     * memory leak.
+     */
+    strfmt(&stamp_cpy, "%s", stamp);
 
-    /* Returning the time stamp. */
-    return stamp;
+    /* Removing the newline character that was added by ctime(). */
+    sdelchar(&stamp_cpy, '\n');
+
+    /* Returning the copy of the time stamp. */
+    return stamp_cpy;
 }
 
 /******************************** In/Out *************************************/
 
-
 /**
- * This function asks the user to input a char in response to a prompt supplied
- * to it, then stores it in the supplied char pointer. 
+ * This function prints a prompt to the user, then assigns a string that is
+ * input by the user to the string pointer provided to it.
  */
-void read_userc(char* cp, char* prompt)
+void scans(char** buf, char* prompt)
 {
-    /* Printing the prompt. */
-    fprintf(stdout, "%s", prompt);
+    char* buf_cpy;  /* A copy of the buffer. */
+    char userin;    /* The user input. */
 
-    /* Getting the user's input. */
-    scanf("%c", cp);
+    /* Arbitrarily initialising to avoid invalid pointer error upon
+     * initial call to free(). */
+    *buf = (char*) malloc(sizeof(char));
+    *buf[0] = '\0';
+    strfmt(&buf_cpy, "%s", *buf);
+
+    /* Going to a new line. */
+    fprintf(stdout, "\n");
+    
+    do
+    {
+        /* Clearing the line. */
+        termclearfb();
+        cursmv(strlen(prompt) + strlen(*buf) + 1, BEFORE);
+
+        /* Printing the prompt and any past user input. */
+        fprintf(stdout, "%s%s\n", prompt, *buf);
+        cursmv(1, ABOVE);
+        cursmv(strlen(prompt) + strlen(*buf), AFTER);
+
+        /* Getting and processing user input. */
+        switch (userin = scanc_nowait())
+        {
+            /* Backspace. */
+            case (int) 127:
+                /* Removing the last character in the buffer. */ 
+                sdelelem(buf, strlen(*buf) - 1);
+                
+                /* Recreating the temporary copy of the buffer. */
+                free(buf_cpy);
+                strfmt(&buf_cpy, "%s", *buf);
+                break;
+            
+            /* Enter. */
+            case '\n':
+                break;
+
+            /* Anything else. */
+            default:
+                /* Recreating the buffer. */
+                free(*buf);
+                strfmt(buf, "%s%c", buf_cpy, userin);
+
+                /* Recreating the temporary copy of the buffer. */
+                free(buf_cpy);
+                strfmt(&buf_cpy, "%s", *buf);
+        }
+    } while(userin != '\n');
+
+    /* De-allocating temp variable memory. */
+    free(buf_cpy);
 }
 
 /**
  * This function returns a char that was input by the user. It doesn't wait
  * for the user to press enter. (Not my code)
  */
-char read_userc_nowait() {
+char scanc_nowait() {
         char buf = 0;
         struct termios old = {0};
         if (tcgetattr(0, &old) < 0)
@@ -135,18 +205,24 @@ char read_userc_nowait() {
  * This function closes the file stream provided tp it. If there is an error,
  * it is printed on stderr and the program will exit.
  */
-void close_file(FILE* fp)
+void closefs(FILE* fs)
 {
+    char* tstamp;   /* A time stamp. */
+
     /* Closing the file stream. */
-    if (fclose(fp) != 0)
-    {
-        /* There was an error closing the file stream so we are printing it
-         * on stderr and exiting the program. */
-        fprintf(stderr,
-                "[ %s ] ERROR: In function close_file: %s\n", 
-                timestamp(), strerror(errno));
-        exit(EXIT_FAILURE);
-    }
+    if (fclose(fs) == 0)
+        return;
+    
+    /* An error occured so we are printing an error message. */
+    fprintf(stderr,
+            "[ %s ] ERROR: In function closefs: %s\n", 
+            (tstamp = timestamp()), strerror(errno));
+
+    /* De-allocating memory. */
+    free(tstamp);
+
+    /* Exiting the program. */
+    exit(EXIT_FAILURE);
 }
 
 /**
@@ -156,24 +232,26 @@ void close_file(FILE* fp)
  * is exited. If the file is successfully opened, this function
  * will return a pointer to the file stream.
  */
-FILE* open_file(char* fname, char* mode)
+FILE* openfs(char* fname, char* mode)
 {
-    FILE* fp;   // The pointer to the file stream.
+    FILE* fs;       /* The pointer to the file stream. */
+    char* tstamp;   /* A time stamp. */
 
     /* Opening the file. */
-    if ((fp = fopen(fname, mode)) == NULL)
-    {
-        /* There was an error opening the file so wea re printing the error to
-         * stderr and exiting the program. */
-        fprintf(stderr, 
-                "[ %s ] ERROR: In function open_file(): "
-                "Could not open file %s: %s\n",
-                timestamp(), fname, strerror(errno));
-        exit(EXIT_FAILURE);
-    }
+    if ((fs = fopen(fname, mode)) != NULL)
+        return fs;
 
-    /* Returning the pointer to the file stream. */
-    return fp;
+    /* An error occured so we're printing an error message. */
+    fprintf(stderr, 
+            "[ %s ] ERROR: In function openfs(): "
+            "Could not open file %s: %s\n",
+            (tstamp = timestamp()), fname, strerror(errno));
+
+    /* De-allocating memory. */
+    free(tstamp);
+
+    /* Freeing memory. */
+    exit(EXIT_FAILURE);
 }
 
 /**
@@ -181,33 +259,31 @@ FILE* open_file(char* fname, char* mode)
  * the buffer provided to it. It returns true on success or false if EOF is
  * reached. It will exit the program if an error occurs.
  */
-bool read_filec(FILE* fstreamp, char* buf)
+bool readfsc(FILE* fs, char* buf)
 {
-    const bool SUCCESS = 1;     // Return value if success
-    const bool END_OF_FILE = 0; // Return value if EOF
-    bool status;                // Whether the char was read successfully
+    const bool SUCCESS = true;      /* Return value if success. */
+    const bool END_OF_FILE = false; /* Return value if EOF. */
+    char* tstamp;
 
-    /* Presuming the character was read successfully. */
-    status = SUCCESS;
+    /* Getting the next char from the file stream and checking if it was
+     * successfully read. */
+    if ((*buf = fgetc(fs)) != EOF) 
+        return SUCCESS;
 
-    /* Reading the char. */
-    if ((*buf = fgetc(fstreamp)) == EOF)
-    {
-        /* Checking if an error occured. */
-        if (ferror(fstreamp))
-        {
-            /* Printing an error message and exiting the program. */
-            fprintf(stderr,
-                    "[ %s ] ERROR: In function read_filec(): %s\n",
-                    timestamp(), strerror(errno));
-            exit(EXIT_FAILURE);
-        }
-        /* EOF was reached. */
-        status = END_OF_FILE;
-    }
+    /* Checking if EOF was reached. */
+    if (!ferror(fs)) 
+        return END_OF_FILE;
 
-    /* Returning whether the char was read successfully. */
-    return status;
+    /* An error occurred so we're printing an error message. */
+    fprintf(stderr,
+            "[ %s ] ERROR: In function readfsc(): %s\n",
+            (tstamp = timestamp()), strerror(errno));
+
+    /* De-allocating memory. */
+    free(tstamp);
+
+    /* Exiting the program. */
+    exit(EXIT_FAILURE);
 }
 
 
@@ -217,138 +293,466 @@ bool read_filec(FILE* fstreamp, char* buf)
  * or false if EOF was reached. If an error occurs the program will exit.
  * Make sure to free() the buffer when you're finished with it.
  */
-bool read_fileln(FILE* fstreamp, char** buf)
+bool readfsl(FILE* fs, char** buf)
 {
-    const bool SUCCESS = 1;     // Return value if success
-    const bool END_OF_FILE = 0; // Return value if EOF
-    bool status;                // Whether the line was read successfully
-    size_t n;                   // Allocated size of the buffer
+    const bool SUCCESS = true;      /* Return value if success. */
+    const bool END_OF_FILE = false; /* Return value if EOF. */
+    size_t n;                       /* Allocated size of the buffer. */
+    char* tstamp;                   /* A time stamp. */
 
     /* Initialising how big the buffer is. */
     n = 0;
-
-    /* Presuming the character was read successfully. */
-    status = SUCCESS;
     
-    /* Reading the next line from the file. */
-    if (getline(buf, &n, fstreamp) == -1)
-    {
-        /* Checking if an error occured. */
-        if (ferror(fstreamp))
-        {
-            /* Printing an error message and exiting the program. */
-            fprintf(stdout,
-                    "[ %s ] ERROR: In function read_fileln: %s\n",
-                    timestamp(), strerror(errno));
-            exit(EXIT_FAILURE);
-        }
-        /* EOF was reached. */
-        status = END_OF_FILE;
-    }
+    /* Reading the next line from the file stream and checking if it was
+     * read successfully. */
+    if (getline(buf, &n, fs) != -1)
+        return SUCCESS;
 
-    /* Returning whether the line was read successfully. */
-    return status;
+    /* Checking if EOF was reached. */
+    if (!ferror(fs))
+        return END_OF_FILE;
+            
+    /* An error occurred so we are printing an error message. */
+    fprintf(stdout,
+            "[ %s ] ERROR: In function readfsl: %s\n",
+            timestamp(), strerror(errno));
+
+    /* De-allocating memory. */
+    free(tstamp);
+
+    /* Exiting the program. */
+    exit(EXIT_FAILURE);
 }
 
 /**
  * This function writes the char provided to it to the file stream provided to
  * it.
  */
-void write_filec(FILE* fstreamp, char ch)
+void writefsc(FILE* fs, char ch)
 {
     /* Writing the char to the file stream. */
-    fprintf(fstreamp, "%c", ch); 
+    fprintf(fs, "%c", ch); 
 }
 
 /**
- * This function writes the string provided to it to the file steam provided
+ * This function writes the string provided to it to the file stream provided
  * to it.
  */
-void write_str(FILE* fstreamp, char* str)
+void writefss(FILE* fs, char* str)
 {
-    int c;  // Index of the current char in the string
+    int c;  /* Index of the current char in the string. */
 
     /* Writing the string to the file stream. */
     for (c = 0; c < strlen(str); c++)
-        write_filec(fstreamp, str[c]);
+        writefsc(fs, str[c]);
 }
 
 /******************************** Strings ************************************/
+
+/**
+ * This function returns the number of bytes a string will need to be
+ * allocated based on the variable argument list and a format string that are
+ * provided to this function.
+ */
+size_t vbytesfmt(va_list lp, char* fmt)
+{
+    va_list lp_cpy; /* A Copy of the list of arguments. */
+    size_t bytes;   /* The number of bytes the string needs. */
+
+    /* Copying the argument list. */
+    va_copy(lp_cpy, lp);
+
+    /* Getting the number of bytes the string will need. Adding an extra
+     * 1 char worth of bytes for the null character. */
+    bytes = vsnprintf(NULL, 0, fmt, lp_cpy) + sizeof(char);
+
+    /* Assuring a clean finish to the copy. */
+    va_end(lp_cpy);
+
+    /* Returning the number of bytes the string will need. */
+    return bytes;
+}
 
 /**
  * This function dynamically allocates only the needed amount of memory to a
  * string based on the argument list, then concatenates the argument list into 
  * the supplied format and stores it in the supplied string pointer.
  */
-void stringf(char** sptr, char *fmt, ...)
+void strfmt(char** sp, char *fmt, ...)
 {
-    va_list lptr;       // Pointer to the list of arguments
-    va_list lptr_cpy;   // A Copy of the list of arguments
-    size_t bytes;       // The number of bytes the string needs
+    va_list lp;     /* Pointer to the list of arguments. */
+    size_t bytes;   /* The number of bytes the string needs. */
 
     /* Pointing to the first argument. */
-    va_start(lptr, fmt);
+    va_start(lp, fmt);
 
-    /* Copying the argument list. */
-    va_copy(lptr_cpy, lptr);
-
-    /* Getting the number of bytes the string will need. Adding
-     * 1 for the null byte. */
-    bytes = vsnprintf(NULL, 0, fmt, lptr_cpy) + 1;
-
-    /* Assuring a clean finish to the copy. */
-    va_end(lptr_cpy);
+    /* Getting the number of bytes the string will need to be allocated. */
+    bytes = vbytesfmt(lp, fmt);
 
     /* Allocating memory to the string. */
-    *sptr = (char*) malloc(bytes);
+    *sp = (char*) malloc(bytes);
 
     /* Creating the string. */
-    vsnprintf(*sptr, bytes, fmt, lptr);
+    vsprintf(*sp, fmt, lp);
 
     /* Assuring a clean finish to the argument list. */
-    va_end(lptr);
+    va_end(lp);
+}
+
+/**
+ * This function removes the char element from the string provided to it which
+ * is at the element number/index provided to it.
+ */
+void sdelelem(char** sp, unsigned elem)
+{
+    char* to_elem;      /* Chars from start of string to element to delete. */
+    char* from_elem;    /* Chars from element to delete to end of string. */
+    unsigned c;         /* The current char in the string. */
+
+    /* Allocating memory. */
+    to_elem     = (char*) malloc(sizeof(char) * (elem + 1));
+    from_elem   = (char*) malloc(sizeof(char) * (strlen(*sp) - elem));
+
+    /* Storing the two sections of the string. */
+    for (c = 0; c < strlen(*sp); c++)
+    {
+        if (c < elem)
+            to_elem[c] = (*sp)[c];
+        if (c > elem)
+            from_elem[c] = (*sp)[c];
+    }
+    to_elem[elem] = '\0';
+    from_elem[strlen(*sp) - elem - 1] = '\0';
+
+    /* Recreating the string. */
+    free(*sp);
+    strfmt(sp, "%s%s", to_elem, from_elem);
+
+    /* Cleaning up. */
+    free(to_elem);
+    free(from_elem);
 }
 
 /**
  * This function removes all cases of the provided char from the string at the
  * provided pointer.
  */
-void stringrmc(char** str, char remove)
+void sdelchar(char** sp, char remove)
 {
-    int len = strlen(*str);   // The original length of the string.
-    int total_chars = strlen(*str);   // The current length of the string.
-    int i; // An indexer
-    char* src; // The address of where to start moving the memory.
-    char* dst; // The address of where to move the memory to.
+    unsigned c;     /* Index of current char in the string. */
 
-    /* Overwriting the unwanted character. */
-    for (i = 0; i < len; i++)
+    /* Overwriting the unwanted characters. */
+    for (c = 0; c < strlen(*sp); c++)
     {
-        if ((*str)[i] == remove)
+        if ((*sp)[c] == remove)
         {
-            /* Setting the source and destinations points for moving. */
-            src = &((*str)[i + 1]);
-            dst = &((*str)[i]);
-
-            /* Overwriting an unwanted character. */
-            memmove(dst, src, 
-                    (sizeof(char) * strlen(*str)) - (sizeof(char) * i));
+            sdelelem(sp, c);
 
             /* Decrementing the index so we will check the replacement 
              * character. */
-            i--;
-
-            /* Recording the new length of the string. */
-            total_chars--;
+            c--;
         }
     }
+}
 
-    /* Designating the end of the string. */
-    (*str)[total_chars] = '\0';
+/******************************* Terminal ************************************/
+
+/**
+ * This function sets the background colour of the terminal cursor.
+ */
+void curscolb(enum termcolours c)
+{
+    char* cmd;  /* The command. */
+
+    /* Setting the background colour. */
+    strfmt(&cmd, "tput setab %d", c);
+    system(cmd);
+
+    /* Cleaning up. */
+    free(cmd);
+}
+
+/**
+ * This function sets the foreground colour of the temrinal cursor.
+ */
+void curscolf(enum termcolours c)
+{
+    char* cmd;   /* The command. */
+
+    /* Setting the colour. */
+    strfmt(&cmd, "tput setaf %d", c);
+    system(cmd);
+
+    /* Cleaning up. */
+    free(cmd);
+}
+
+/**
+ * This function moves the terminal cursor a number of rows or columns
+ * equal to the number provided to the function, and in a direction that is
+ * also provided.
+ */
+void cursmv(unsigned int n, enum directions direction)
+{
+    char* cmd; /* The command. */
+
+    /* Creating the command. */
+    switch (direction)
+    {
+        case ABOVE:
+            strfmt(&cmd, "tput cuu %d", n);
+            break;
+        case BELOW:
+            strfmt(&cmd, "tput cud %d", n);
+            break;
+        case BEFORE:
+            strfmt(&cmd, "tput cub %d", n);
+            break;
+        case AFTER:
+            strfmt(&cmd, "tput cuf %d", n);
+            break;
+    }
+
+    /* Moving the cursor. */
+    system(cmd);
+
+    /* Cleaning up. */
+    free(cmd);
+}
+
+/**
+ * This function places the terminal at the row and column numbers
+ * provided to it.
+ */
+void cursput(unsigned int col, unsigned int row)
+{
+    char* cmd;   /* The command. */
+
+    /* Setting the cursor position. */
+    strfmt(&cmd, "tput cup %d %d", row, col);
+    system(cmd);
+
+    /* Cleaning up. */
+    free(cmd); 
+}
+
+/**
+ * This function clears the entire terminal and positions the cursor at home.
+ */
+void termclear()
+{
+    /* Clearing the terminal and putting the cursor at home. */
+    system("tput clear");
+}
+
+/**
+ * This function clears the current line the terminal cursor is on from
+ * the position of the cursor to the line's beginning.
+ */
+void termclearb()
+{
+    /* Clearing from the cursor to the beginning of the line. */
+    system("tput el1");
 }
 
 
+/**
+ * This function clears the current line the terminal cursor is on from
+ * the position of the cursor to the line's end.
+ */
+void termclearf()
+{
+    /* Clearing from the cursor to the end of the line. */
+    system("tput el");
+}
 
+/**
+ * This function clears the entire line that the terminal cursor is currently
+ * on.
+ */
+void termclearfb()
+{
+    /* Clearing the line that the terminal cursor is currently on. */
+    termclearf();
+    termclearb();
+}
 
+/**
+ * This function draws in the terminal based on the contents of a file.
+ */
+void termdrawfs(char* filepath, vec2d origin, vec2d bounds)
+{
+    FILE* fs;   /* Pointer to the file stream. */
+    char* line; /* The text in the file. */
 
+    /* Ensuring that the buffer is set to NULL. */
+    line = NULL;
+    
+    /* Opening the file. */ 
+    fs = openfs(filepath, "r");
+   
+    /* Reading the line from the file. */ 
+	while (readfsl(fs, &line)) 
+    {
+        /* Drawing the line. */
+        termdrawl(line, strlen(line), origin, bounds);
 
+        /* Getting ready to draw the next line. */
+        origin.y++;
+        free(line);
+        line = NULL;
+    }
+
+    /* Closing the file. */
+    closefs(fs);
+}
+
+/**
+ * This function draw a single row of an art file.
+ */
+void termdrawl(char* text, size_t text_len, vec2d origin, vec2d bounds)
+{
+    int c;  // The current column of the row
+
+    /* Moving the cursor to the origin. */
+    cursput(origin.x, origin.y);
+    
+    /* Drawing the row. */
+    for (c = 0; c < text_len && c < bounds.x; c++)
+    {
+        /* Checking if there should be something drawn in theis column. */
+        if (text[c] == '1')
+        {
+            /* Drawing a filled space. */
+            curscolb(WHITE);
+            system("printf \" \"");
+        }
+        else
+        {
+            /* Drawing an empty space. */
+            system("tput cuf1");
+        }
+    }
+    textmode(NORMAL);
+}
+
+/**
+ * This function draws a string in the terminal.
+ * The art files need to exist for each character.
+ */
+void termdraws(char* str, vec2d origin, vec2d bounds)
+{
+    char* filepath; // Path of the current file
+    int c;          // Current letter in the string
+
+    /* Drawing the string. */
+    for (c = 0; c < strlen(str); c++)
+    {
+        strfmt(&filepath, "./art/%c.txt", str[c]);
+        termdrawfs(filepath, origin, bounds);
+        origin.x += CHAR_WIDTH;
+        free(filepath);
+    }
+}
+
+/**
+ * This function returns the number of rows and columns of the terminal.
+ */
+vec2d termres()
+{
+    vec2d res;      /* Storage for the rows and columns. */
+    FILE* rfp;      /* File stream for the rows file. */
+    FILE* cfp;      /* File stream for the columns file. */
+    char rbuf[5];   /* The number of rows. */
+    char cbuf[5];   /* The number of columns. */
+
+    /* Creating a temporary directory to store the files. */
+    system("if [ ! -d temp/ ]; then\nmkdir temp/\nfi");
+
+    /* Writing the number of rows and columns to their files. */
+    system("tput lines >> temp/screen_rows.txt");
+    system("tput cols >> temp/screen_cols.txt");
+
+    /* Opening the files. */
+    rfp = openfs("temp/screen_rows.txt", "r");
+    cfp = openfs("temp/screen_cols.txt", "r");
+
+    /* Getting the number of rows and columns from the files. */
+    fgets(rbuf, sizeof(rbuf), rfp);
+    fgets(cbuf, sizeof(cbuf), cfp);
+
+    /* Converting the number of rows and columns to integers. */
+    res.x = atoi(cbuf); //strtol( cbuf, &end, 10 );
+    res.y = atoi(rbuf); //strtol( rbuf, &end, 10 );
+
+    /* Closing the files. */
+    closefs(rfp);
+    closefs(cfp);
+
+    /* Deleting the files. */
+    system("rm -rf temp");
+
+    /* Returning the number of rows and columns that the terminal has. */
+    return res;
+}
+
+/**
+ * This function changes the terminal text-mode.
+ */
+void textmode(enum textmodes m)
+{
+    /* Changing the terminal text-mode. */
+    switch (m) 
+    {
+        case BOLD       : system( "tput bold" ); break;
+        case NORMAL     : system( "tput sgr0" ); break;
+        case BLINK      : system( "tput blink" ); break;
+        case REVERSE    : system( "tput smso" ); break;
+        case UNDERLINE  : system( "tput smul" ); break;
+    }
+}
+
+/**
+ * This function prints the string provided to it into the the terminal
+ * at the location specified by the vec2d that is also provided to the
+ * function.
+ */
+void termprint(char* str, vec2d origin)
+{
+    char* cmd;  // The command
+
+    /* Printing the string. */
+    cursput(origin.x, origin.y);
+    strfmt(&cmd, "printf \"%s\"", str);
+    system(cmd);
+
+    /* Cleaning up. */
+    free(cmd);
+}
+
+void termprintfs(char* filepath, vec2d* origin)
+{
+    FILE* fs;   /* Pointer to the file stream. */
+    char* line; /* The text in the file. */
+
+    /* Ensuring that the buffer is set to NULL. */
+    line = NULL;
+    
+    /* Opening the file. */ 
+    fs = openfs(filepath, "r");
+   
+    /* Reading the line from the file. */ 
+    while (readfsl(fs, &line)) 
+    {
+        /* Drawing the line. */
+        termprint(line, *origin);
+
+        /* Getting ready to draw the next line. */
+        (*origin).y++;
+        free(line);
+        line = NULL;
+    }
+
+    /* Closing the file. */
+    closefs(fs);
+}

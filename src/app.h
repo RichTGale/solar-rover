@@ -21,7 +21,6 @@
 
 #include "mycutils.h"
 #include "rpiutils.h"
-#include "term.h"
 #include "rover.h"
 
 #define FRAMES_PER_SEC 2

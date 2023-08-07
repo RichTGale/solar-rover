@@ -6,7 +6,7 @@
  */
 void print_rpi_info( rpi_info info )
 {
-    fgcolour( MAGENTA );
+    curscolf( MAGENTA );
     textmode( UNDERLINE );
     fprintf( stdout, "Raspberry Pi information:\n" );
     textmode( NORMAL );

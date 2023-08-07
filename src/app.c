@@ -17,7 +17,6 @@
  */
 struct app_data {
     rpi_info rpiinfo;   // Information about the raspberry pi
-    term t;             // The terminal
     rover r;            // The rover
     bool isrunning;     // Whether the app should continue running
     bool drawstart;     // Whether the app should draw the start page
@@ -40,10 +39,6 @@ void app_init( app* ap )
     fprintf( stdout, " - Getting rpi info..\n" );
     get_rpi_info( &(*ap)->rpiinfo );
 
-    // Preparing the CLI utility
-    fprintf( stdout, " - Setting up the terminal utility..\n" );
-    term_init( &(*ap)->t );
-
     // Preparing the rover
     fprintf( stdout, " - Setting up the rover..\n" );
     rover_init( &(*ap)->r );
@@ -56,38 +51,51 @@ void app_init( app* ap )
 }
 
 /**
+ * Ends the provided app.
+ */
+void app_term( app* ap )
+{
+    // Cleaning up the rover
+    rover_free( &(*ap)->r );
+
+    // Cleaning up pi-gpio
+    cleanup();
+    
+    // Unallocating the app's memory
+    free ( *ap );
+}
+
+/**
  * Draws the app starting screen.
  */
 void app_startscreen(app a)
 {
-    coord2D origin;
-    coord2D bounds;
-    coord2D message_origin;
+    vec2d origin;
+    vec2d bounds;
+    vec2d message_origin;
     char* message = "<Press any key>";
 
     origin.x = 1;
     origin.y = 1;
-    bounds = term_getbounds(a->t);
+    bounds = termres();
 
     // Clearing the terminal
-    term_clear();
+    termclear();
 
     // Drawing the program title
     textmode(NORMAL);
-    drawstr("solar", origin, bounds);
-    origin.y += 8;
-    drawstr("rover", origin, bounds);
+    termprintfs("../../art/title.txt", &origin);
 
     /* Printing information about the raspberry pi this program
      * is running on. */
-    placecursor(1, 16);
+    cursput(origin.x, origin.y);
     print_rpi_info(a->rpiinfo);
 
     /* Printing the message. */
     message_origin.x = 42/2 - (strlen(message) / 2);
     message_origin.y = 24;
     textmode(BLINK);
-    printstr(message, message_origin);
+    termprint(message, message_origin);
     textmode(NORMAL);
 }
 
@@ -129,14 +137,14 @@ void app_exec( app* ap )
     {
 	    if ( check_timer( end_last_frame, NANOS_PER_FRAME ) )
 	    {
-	        term_clear();
+	        termclear();
 
             if ( !(*ap)->drawstart )
             {
 	            // TODO: Draw CLI
                 
                 // Getting user input
-	            usrin = read_userc_nowait();
+	            usrin = scanc_nowait();
                 
                 // Processing user input
                 app_processusrin( ap, usrin );
@@ -147,27 +155,10 @@ void app_exec( app* ap )
                 (*ap)->drawstart = false;
 	        
                 // Waiting for the user to press any key
-	            usrin = read_userc_nowait();
+	            usrin = scanc_nowait();
 	        }
             start_timer( &end_last_frame );
 	    }
     }
 }
 
-/**
- * Ends the provided app.
- */
-void app_term( app* ap )
-{
-    // Cleaning up the rover
-    rover_free( &(*ap)->r );
-
-    // Cleaning up the CLI utility
-    term_free( &(*ap)->t );
-
-    // Cleaning up pi-gpio
-    cleanup();
-    
-    // Unallocating the app's memory
-    free ( *ap );
-}

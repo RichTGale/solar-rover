@@ -13,18 +13,23 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <string.h> // strerror()
-#include <time.h>
 #include <stdbool.h>
+#include <stdarg.h>
+#include <time.h>
 #include <stdint.h>
 #include <errno.h>
 #include <unistd.h>
 #include <termios.h>
 
-#include "array.h"
-
 #define NANOS_PER_SEC 1000000000
+
+/********************************* Types *************************************/
+
+typedef struct {
+    int x;
+    int y;
+} vec2d;
 
 /********************************* Time **************************************/
 
@@ -48,22 +53,22 @@ char* timestamp();
 /******************************** In/Out *************************************/
 
 /**
- * This function asks the user to input a char in response to a prompt supplied
- * to it, then stores it in the supplied char pointer. 
+ * This function prints a prompt to the user, then assigns a string that is
+ * input by the user to the buffer provided to it.
  */
-void read_userc(char* cptr, char* prompt);
+void scans(char** buf, char* prompt);
 
 /**
  * This function returns a char that was input by the user. It doesn't wait
  * for the user to press enter. (Not my code)
  */
-char read_userc_nowait();
+char scanc_nowait();
 
 /**
  * Closes the provided file stream. If there is an error, it is printed on
  * stderr and the program will exit.
  */
-void close_file(FILE* fp);
+void closefs(FILE* fp);
 
 /**
  * This function opens a file that has a name that matches fname. It opens the
@@ -72,13 +77,13 @@ void close_file(FILE* fp);
  * is exited. If the file is successfully opened, this function
  * will return a pointer to the file stream.
  */
-FILE* open_file(char* fname, char* mode);
+FILE* openfs(char* fname, char* mode);
 
 /**
  * This function assigns the next char in the file stream provided to it to
  * the buffer provided to it.
  */
-bool read_filec(FILE* fstreamp, char* buf);
+bool readfsc(FILE* fstreamp, char* buf);
 
 /**
  * This function assigns the next line in the file stream provided to it to
@@ -86,34 +91,165 @@ bool read_filec(FILE* fstreamp, char* buf);
  * or false if EOF was reached. If an error occurs the program will exit.
  * Make sure to free() the buffer when you're finished with it.
  */
-bool read_fileln(FILE* fstreamp, char** buf);
+bool readfsl(FILE* fstreamp, char** buf);
 
 /**
  * This function writes the char provided to it to the file stream provided to
  * it.
  */
-void write_filec(FILE* fstreamp, char ch);
+void writefsc(FILE* fstreamp, char ch);
 
 /**
  * This function writes the string provided to it to the file steam provided
  * to it.
  */
-void write_str(FILE* fstreamp, char* str);
+void writefss(FILE* fstreamp, char* str);
 
 
 /******************************** Strings ************************************/
+
+/**
+ * This function returns the number of bytes a string will need to be
+ * allocated based on the variable argument list and a format string that are
+ * provided to this function.
+ */
+size_t vbytesfmt(va_list lp, char* fmt);
 
 /**
  * This function dynamically allocates only the needed amount of memory to a
  * string based on the argument list, then concatenates the argument list into 
  * the supplied format and stores it in the supplied string pointer.
  */
-void stringf(char** sptr, char *fmt, ...);
+void strfmt(char** sp, char *fmt, ...);
+
+/**
+ * This function removes the char element from the string provided to it which
+ * is at the element number provided to it.
+ */
+void sdelelem(char** sp, unsigned elem);
 
 /**
  * This function removes all cases of the provided char from the string at the
  * provided pointer.
  */
-void stringrmc(char** str, char remove);
+void sdelchar(char** sp, char remove);
+
+/**
+ * This function removes the last character before the null character
+ * from the string at the string pointer provided to it.
+ */
+//void stringrmlast(char** s);
+
+/******************************* Terminal ************************************/
+
+#define LINE_HEIGHT 8
+#define CHAR_WIDTH LINE_HEIGHT
+
+enum directions {
+    ABOVE,
+    BELOW,
+    BEFORE,
+    AFTER
+    };
+
+enum termcolours { 
+    BLACK,
+    RED,
+    GREEN,
+    YELLOW,
+    BLUE,
+    MAGENTA,
+    CYAN,
+    WHITE,
+    };
+
+enum textmodes { 
+    BOLD,
+    NORMAL,
+    BLINK,
+    REVERSE,
+    UNDERLINE
+    };
+
+/**
+ * This function sets the background colour of the terminal cursor.
+ */
+void curscolb(enum termcolours c);
+
+/**
+ * This function sets the foreground colour of the temrinal cursor.
+ */
+void curscolf(enum termcolours c);
+
+/**
+ * This function moves the terminal cursor a number of rows or columns
+ * equal to the number provided to the function, and in a direction that is
+ * also provided.
+ */
+void cursmv(unsigned int n, enum directions direction);
+
+/**
+ * This function places the terminal cursor at the row and column numbers
+ * provided to it.
+ */
+void cursput(unsigned int col, unsigned int row);
+
+/**
+ * This function clears the terminal.
+ */
+void termclear();
+
+/**
+ * This function clears the current line the terminal cursor is on from
+ * the position of the cursor to the line's beginning.
+ */
+void termclearb();
+
+/**
+ * This function clears the current line the terminal cursor is on from
+ * the position of the cursor to the line's end.
+ */
+void termclearf();
+
+/**
+ * This function clears the entire line that the terminal cursor is currently
+ * on.
+ */
+void termclearfb();
+
+/**
+ * This function draws in the terminal based on the contents of a file.
+ */
+void termdrawfs(char* filepath, vec2d origin, vec2d bounds);
+
+/**
+ * This function draw a single row of an art file.
+ */
+void termdrawl(char* text, size_t text_len, vec2d origin, vec2d bounds);
+
+/**
+ * This function draws a string in the terminal.
+ * The art files need to exist for each character.
+ */
+void termdraws(char* str, vec2d origin, vec2d bounds);
+
+/**
+ * This function prints the string provided to it into the the terminal
+ * at the location specified by the vec2d that is also provided to the
+ * function.
+ */
+void termprint(char* str, vec2d origin);
+
+void termprintfs(char* filepath, vec2d* origin);
+
+/**
+ * This function returns the number of rows and columns of the terminal.
+ */
+vec2d termres();
+
+/**
+ * This function changes the terminal text-mode.
+ */
+void textmode(enum textmodes m);
 
 #endif // MYCUTILS_H
