@@ -106,7 +106,6 @@ void stepper_step(stepper* sp, int num_steps)
                 (*sp)->step_num--;
             }
             steps_left--;
-            printf("step\n");
             step_motor(sp, (*sp)->step_num % 4);
         } 
     }
