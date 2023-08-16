@@ -31,7 +31,7 @@ void rover_init( rover* rp )
     motor_init( &(*rp)->rmotor, ENB_PIN, IN3_PIN, IN4_PIN, 100 );    
 
     // Setting the rover's acceleration rate.
-    (*rp)->acc=10;
+    (*rp)->acc=25;
 }
 
 /**
