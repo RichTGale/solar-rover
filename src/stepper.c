@@ -44,9 +44,9 @@ void stepper_free(stepper* sp)
     cleanup();
 }
 
-void stepper_set_speed(stepper* sp, long speed)
+void stepper_steps_per_sec(stepper* sp, unsigned int steps_per_sec)
 {
-    (*sp)->step_delay = speed;
+    (*sp)->step_delay = NANOS_PER_SEC / steps_per_sec;
 }
 
 void step_motor(stepper* sp, int this_step)
@@ -100,6 +100,7 @@ void stepper_step(stepper* sp, int num_steps)
             }
             else
             {
+                printf("%d\n", (*sp)->step_num);
                 if ((*sp)->step_num == 0)
                     (*sp)->step_num = (*sp)->num_steps;
 

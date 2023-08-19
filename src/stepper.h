@@ -18,7 +18,7 @@ void stepper_init(stepper* sp, int num_steps, int pin1, int pin2,
 
 void stepper_free(stepper* sp);
 
-void stepper_set_speed(stepper* sp, long speed);
+void stepper_steps_per_sec(stepper* sp, unsigned int steps_per_sec);
 
 void stepper_step(stepper* sp, int num_steps);
 
