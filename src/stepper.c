@@ -51,26 +51,27 @@ void stepper_steps_per_sec(stepper* sp, unsigned int steps_per_sec)
 
 void step_motor(stepper* sp, int this_step)
 {
-    switch (this_step) {
-        case 0:  // 1010
+    switch (this_step) 
+    {
+        case 0:
             output_gpio((*sp)->pin1, HIGH);
-            output_gpio((*sp)->pin2, LOW);
-            output_gpio((*sp)->pin3, HIGH);
-            output_gpio((*sp)->pin4, LOW);
-            break;
-        case 1:  // 0110
-            output_gpio((*sp)->pin1, LOW);
-            output_gpio((*sp)->pin2, HIGH);
-            output_gpio((*sp)->pin3, HIGH);
-            output_gpio((*sp)->pin4, LOW);
-            break;
-        case 2:  //0101
-            output_gpio((*sp)->pin1, LOW);
             output_gpio((*sp)->pin2, HIGH);
             output_gpio((*sp)->pin3, LOW);
+            output_gpio((*sp)->pin4, LOW);
+            break;
+        case 1:
+            output_gpio((*sp)->pin1, LOW);
+            output_gpio((*sp)->pin2, HIGH);
+            output_gpio((*sp)->pin3, HIGH);
+            output_gpio((*sp)->pin4, LOW);
+            break;
+        case 2:
+            output_gpio((*sp)->pin1, LOW);
+            output_gpio((*sp)->pin2, LOW);
+            output_gpio((*sp)->pin3, HIGH);
             output_gpio((*sp)->pin4, HIGH);
             break;
-        case 3:  //1001
+        case 3:
             output_gpio((*sp)->pin1, HIGH);
             output_gpio((*sp)->pin2, LOW);
             output_gpio((*sp)->pin3, LOW);
@@ -100,7 +101,6 @@ void stepper_step(stepper* sp, int num_steps)
             }
             else
             {
-                printf("%d\n", (*sp)->step_num);
                 if ((*sp)->step_num == 0)
                     (*sp)->step_num = (*sp)->num_steps;
 
