@@ -19,8 +19,6 @@ struct stepper_data {
 void stepper_init(stepper* sp, int num_steps, int pin1, int pin2,
                                               int pin3, int pin4)
 {
-    setup();
-
     *sp = (stepper) malloc(sizeof(struct stepper_data));
     (*sp)->step_num = 0;
     (*sp)->direction = 0;
@@ -41,7 +39,6 @@ void stepper_init(stepper* sp, int num_steps, int pin1, int pin2,
 void stepper_free(stepper* sp)
 {
     free(*sp);
-    cleanup();
 }
 
 void stepper_steps_per_sec(stepper* sp, unsigned int steps_per_sec)
