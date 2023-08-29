@@ -27,7 +27,7 @@ void motor_init(
                 const int EN_PIN,
                 const int IN1_PIN,
                 const int IN2_PIN,
-                const int VEL_MAX 
+                const int DUTYCYCLE_MAX 
                 );
 
 /**
@@ -36,9 +36,14 @@ void motor_init(
 void motor_free( motor* mp );
 
 /**
+ * This function returns the provided motor's velocity/speed.
+ */
+int motor_get_dutycycle(motor m);
+
+/**
  * Alters the duty-cycle of the provided motor.
  */
-void motor_change_vel( motor* mp, int delta );
+void motor_change_dutycycle( motor* mp, int delta );
 
 /**
  * Prints information about the provided motor.

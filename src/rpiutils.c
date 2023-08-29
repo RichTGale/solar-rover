@@ -11,6 +11,9 @@ void print_rpi_info( rpi_info info )
     fprintf( stdout, "Raspberry Pi information:\n" );
     textmode( NORMAL );
 
+    // Removes the underline on the current line
+    termclearfb();
+
     // Printing P1Revision
     fprintf( stdout, " - p1_revision: " );
     switch ( info.p1_revision )

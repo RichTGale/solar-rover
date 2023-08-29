@@ -730,7 +730,8 @@ void termprint(char* str, vec2d origin)
     free(cmd);
 }
 
-void termprintfs(char* filepath, vec2d* origin)
+void termprintfs(char* filepath, vec2d* origin, enum termcolours colour, 
+                                                enum textmodes mode)
 {
     FILE* fs;   /* Pointer to the file stream. */
     char* line; /* The text in the file. */
@@ -740,7 +741,11 @@ void termprintfs(char* filepath, vec2d* origin)
     
     /* Opening the file. */ 
     fs = openfs(filepath, "r");
-   
+
+    /* Setting the text -mode and colour. */
+    curscolf(colour);
+    textmode(mode);
+
     /* Reading the line from the file. */ 
     while (readfsl(fs, &line)) 
     {
@@ -752,6 +757,9 @@ void termprintfs(char* filepath, vec2d* origin)
         free(line);
         line = NULL;
     }
+
+    /* Changing the text-mode and colour back to normal. */
+    textmode(NORMAL);
 
     /* Closing the file. */
     closefs(fs);

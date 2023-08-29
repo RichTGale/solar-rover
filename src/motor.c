@@ -16,8 +16,8 @@ struct motor_data {
     int en_pin;
     int in1_pin;
     int in2_pin;
-    int vel_max;
-    int vel;
+    int dutycycle_max;
+    int dutycycle;
 };
 
 /**
@@ -28,15 +28,15 @@ void motor_init(
                 const int EN_PIN,
                 const int IN1_PIN,
                 const int IN2_PIN,
-                const int VEL_MAX 
+                const int DUTYCYCLE_MAX 
                 )
 {
     *mp=(motor) malloc( sizeof( struct motor_data ) );
     (*mp)->en_pin=EN_PIN;
     (*mp)->in1_pin=IN1_PIN;
     (*mp)->in2_pin=IN2_PIN;
-    (*mp)->vel_max=VEL_MAX;
-    (*mp)->vel=0;
+    (*mp)->dutycycle_max=DUTYCYCLE_MAX;
+    (*mp)->dutycycle=0;
 
     // Configuring the rpi gpio pins so they can communicate with the 
     // motor driver.
@@ -62,6 +62,14 @@ void motor_free( motor* mp )
 
     // Unallocating memory for the motor.
     free( *mp );
+}
+
+/**
+ * This function returns the provided motor's velocity/speed.
+ */
+int motor_get_dutycycle(motor m)
+{
+    return m->dutycycle;
 }
 
 /**
@@ -99,38 +107,40 @@ void motor_stop( const int BCM1, const int BCM2 )
 /**
  * Alters the duty cycle of the provided motor.
  */
-void motor_change_vel( motor* mp, int delta )
+void motor_change_dutycycle( motor* mp, int delta )
 {
     int dutycycle;  // The duty-cycle of the motor.
 
-    // Setting the velocity of the motor.
-    (*mp)->vel+=delta;
-    if ( (*mp)->vel > (*mp)->vel_max )
-        (*mp)->vel=(*mp)->vel_max;
-    else if ( (*mp)->vel < (*mp)->vel_max*-1 )
-        (*mp)->vel=(*mp)->vel_max*-1;
+    // Calculating the new duty-cycle.
+    (*mp)->dutycycle += delta;
+
+    /* Ensuring the duty-cycle is limited by the maximum possible value. */
+    if ( (*mp)->dutycycle > (*mp)->dutycycle_max ) 
+        (*mp)->dutycycle = (*mp)->dutycycle_max;
+    else if ( (*mp)->dutycycle < (*mp)->dutycycle_max * -1 ) 
+        (*mp)->dutycycle = (*mp)->dutycycle_max * -1;
 
 
     // Ensuring that the motor is spinning in the correct direction.
-    if ( delta>0  && (*mp)->vel>=0 )
+    if ( delta > 0  && (*mp)->dutycycle >= 0 )
     {
         motor_forwards( (*mp)->in1_pin, (*mp)->in2_pin );
     }
-    else if ( delta<0 && (*mp)->vel<=0 )
+    else if ( delta < 0 && (*mp)->dutycycle <= 0 )
     {
         motor_backwards( (*mp)->in1_pin, (*mp)->in2_pin );
     }
     else if ( delta==0 )
     {
         motor_stop( (*mp)->in1_pin, (*mp)->in2_pin );
-        (*mp)->vel=delta;
+        (*mp)->dutycycle = delta;
     }
 
-    // Setting the duty-cycle.
-    if ( (*mp)->vel<0 )
-        dutycycle=(*mp)->vel*-1;
+    // Applying the duty-cycle to the motor.
+    if ( (*mp)->dutycycle < 0 )
+        dutycycle = (*mp)->dutycycle * -1;
     else
-        dutycycle=(*mp)->vel;
+        dutycycle = (*mp)->dutycycle;
     pwm_set_duty_cycle( (*mp)->en_pin, dutycycle );
 }
 
@@ -140,5 +150,5 @@ void motor_change_vel( motor* mp, int delta )
 void motor_print( motor m ) 
 {
     // Printing the motor's velocity.
-    fprintf( stdout, "vel: %d", m->vel );
+    fprintf( stdout, "vel: %d", m->dutycycle );
 }

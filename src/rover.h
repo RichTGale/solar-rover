@@ -15,6 +15,7 @@
 #include <stdlib.h>
 
 #include "motor.h"
+#include "stepper.h"
 
 // Raspberry pi gpio pin numbers for the motor driver.
 #define ENA_PIN 12
@@ -25,9 +26,14 @@
 #define IN4_PIN 6
 
 /**
- * Motor direction identities.
+ * These are thge different ways that the dc motors can move.
  */
 enum MotorDirection { FORWARDS, BACKWARDS, STOP, LEFT, RIGHT };
+
+/**
+ * These are the different ways that the stepper motors can move.
+ */
+enum StepRotation { CLOCKWISE, ANTICLOCKWISE, NOT_ROTATING };
 
 /**
  * The Rover data structure.
@@ -45,9 +51,22 @@ void rover_init( rover* rp );
 void rover_free( rover* rp );
 
 /**
- * Alters the rover's velocity.
+ * This function returns a vector that represents the duty-cycles of
+ * its two driving motors.
  */
-void rover_change_vel( rover* rp, enum MotorDirection direction );
+vec2d rover_get_direction( rover r );
+
+/**
+ * This function changes the duty-cycles of the provided rover's two
+ * driving motors based on the provided direction.
+ */
+void rover_change_direction( rover* rp, enum MotorDirection direction );
+
+/**
+ * This function rotates the provided stepper motor in the direction
+ * provided.
+ */
+void rover_rotate_zaxis(rover* rp, enum StepRotation rotation);
 
 /**
  * Prints information about the rover.
