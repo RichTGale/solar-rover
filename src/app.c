@@ -16,11 +16,12 @@
  * The data contained within the app data-type.
  */
 struct app_data {
-    rpi_info rpiinfo;       // Information about the raspberry pi
-    rover r;                // The rover
-    bool is_running;        // Whether the app is running
-    bool start_screen_on;   // Whether the starting screen is on
-    bool control_screen_on; // Whether the control screen is on
+    rpi_info rpiinfo;                   // Information about the raspberry pi
+    rover r;                            // The rover
+    enum MotorDirection new_direction;  // The new motor direction
+    bool is_running;                    // Whether the app is running
+    bool start_screen_on;               // Whether the starting screen is on
+    bool manual_drive_screen_on;        // Whether the control screen is on
 };
 
 /**
@@ -49,7 +50,9 @@ void app_init( app* ap )
 
     // Initialising which cli screen to draw
     (*ap)->start_screen_on = true;
-    (*ap)->control_screen_on = false;
+    (*ap)->manual_drive_screen_on = false;
+
+    (*ap)->new_direction = STOP;
 }
 
 /**
@@ -70,7 +73,7 @@ void app_term( app* ap )
 /**
  * Draws the app starting screen.
  */
-void app_start_screen(app a)
+void draw_start_screen(app a)
 {
     vec2d origin;
     vec2d bounds;
@@ -98,7 +101,7 @@ void app_start_screen(app a)
     textmode(NORMAL);
 }
 
-void draw_direction(enum MotorDirection direction)
+void draw_manual_drive_screen( app a )
 {
     vec2d uarrow_origin;    /* Origin of the up arrow image. */
     vec2d darrow_origin;    /* Origin of the down arrow image. */
@@ -117,7 +120,7 @@ void draw_direction(enum MotorDirection direction)
 
     /* Draw a coloured arrow for the direction that was last pressed. Draw
      * white arrows for the rest. */    
-    switch ( direction )
+    switch ( a->new_direction )
     {
         case FORWARDS: 
             termprintfs("../../art/up_arrow.txt", &uarrow_origin, GREEN, BOLD);
@@ -151,67 +154,63 @@ void draw_direction(enum MotorDirection direction)
     }
 }
 
-void draw_rotation() 
-{
-
-}
-
-void process_user_in( app* ap, char user_in )
+void update( app* ap, char user_in )
 {
     if ( (*ap)->start_screen_on )
     {
         switch ( user_in )
         {
-	        case 'q':
-                (*ap)->is_running = false;
-	            break;
-            default:
-                (*ap)->start_screen_on = false;
-                (*ap)->control_screen_on = true;
-                break;
+	        case 'q' :  (*ap)->start_screen_on = false;
+                        (*ap)->is_running = false;
+                        break;
+            default  :  (*ap)->start_screen_on = false;
+                        (*ap)->manual_drive_screen_on = true;
+                        break;
         }
     }
-    if ( (*ap)->control_screen_on )
+    else if ( (*ap)->manual_drive_screen_on )
     {
         switch ( user_in )
         {
-	        case 'w':
-                rover_change_direction( &(*ap)->r, FORWARDS );
-                draw_direction( FORWARDS );
-	            break;
-	        case 'a':
-                rover_change_direction( &(*ap)->r, LEFT );
-                draw_direction( LEFT );
-	            break;
-	        case 's':
-                rover_change_direction( &(*ap)->r, BACKWARDS );
-                draw_direction( BACKWARDS );
-	            break;
-	        case 'd':
-                rover_change_direction( &(*ap)->r, RIGHT );
-                draw_direction( RIGHT );
-	            break;
-	        case 'x':
-                rover_change_direction( &(*ap)->r, STOP );
-                draw_direction( STOP );
-	            break;
-	        case 'j':
-                rover_rotate_zaxis( &(*ap)->r, CLOCKWISE );
-                draw_rotation( CLOCKWISE );
-	            break;
-	        case 'l':
-                rover_rotate_zaxis( &(*ap)->r, ANTICLOCKWISE );
-                draw_rotation( ANTICLOCKWISE );
-	            break;
-	        case 'q':
-                (*ap)->start_screen_on = true;
-                (*ap)->control_screen_on = false;
-	            app_start_screen( *ap );
-	            break;
-            default:
-                draw_direction( STOP );
-                draw_rotation( NOT_ROTATING );
+            case 'w' :  rover_change_direction( &(*ap)->r, FORWARDS );
+                        (*ap)->new_direction = FORWARDS;
+                        break;
+            case 'a' :  rover_change_direction( &(*ap)->r, LEFT );
+                        (*ap)->new_direction = LEFT;
+                        break;
+            case 's' :  rover_change_direction( &(*ap)->r, BACKWARDS );
+                        (*ap)->new_direction = BACKWARDS;
+                        break;
+            case 'd' :  rover_change_direction( &(*ap)->r, RIGHT );
+                        (*ap)->new_direction = RIGHT;
+                        break;
+            case 'x' :  rover_change_direction( &(*ap)->r, STOP );
+                        (*ap)->new_direction = STOP;
+                        break;
+            case 'j' :  rover_rotate_zaxis( &(*ap)->r, CLOCKWISE );
+                        break;
+            case 'l' :  rover_rotate_zaxis( &(*ap)->r, ANTICLOCKWISE );
+                        break;
+            case 'q' :  (*ap)->start_screen_on = true;
+                        (*ap)->manual_drive_screen_on = false;
+                        rover_change_direction( &(*ap)->r, STOP );
+                        (*ap)->new_direction = STOP;
+                        break;
         }
+    }
+}
+
+void draw( app a )
+{
+    termclear();
+
+    if ( a->start_screen_on )
+    {
+        draw_start_screen( a );
+    }
+    else if ( a->manual_drive_screen_on )
+    {
+        draw_manual_drive_screen( a );
     }
 }
 
@@ -225,43 +224,22 @@ void app_exec( app* ap )
 
     // Starting the timer.
     start_timer( &end_last_frame );
-    
-    /* Drawing the start screen. */
-    termclear();
-	app_start_screen( *ap );
-    
+ 
+    draw( *ap );
+
     while ( (*ap)->is_running )
     {
 	    if ( check_timer( end_last_frame, NANOS_PER_FRAME ) )
 	    {
+            /* Getting user input. */
+	        user_in = scanc_nowait(); 
+ 
+            /* Processing user input. */
+	        update( ap, user_in );
 
-            // Getting user input
-	        user_in = scanc_nowait();    
-            
-            /* Clearing the terminal. */ 
-            termclear();
+            draw( *ap );
 
-            // Processing user input
-            process_user_in( ap, user_in );
-            
-//            if ( !(*ap)->draw_start_screen )
-//            {
-//                // Getting user input
-//	            user_in = scanc_nowait();
-//                
-//                // Processing user input
-//                process_user_in( ap, user_in );
-//	       
-//            }
-//            else if ( (*ap)->draw_start_screen )
-//	        {
-//	        
-//                // Waiting for the user to press any key
-//	            user_in = scanc_nowait();
-//                
-//                // Processing user input
-//                process_user_in( ap, user_in );
-//	        }
+            /* Restarting the framerate timer. */
             start_timer( &end_last_frame );
 	    }
     }
