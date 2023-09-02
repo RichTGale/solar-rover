@@ -51,10 +51,15 @@ void rover_init( rover* rp );
 void rover_free( rover* rp );
 
 /**
+ * This function returns the provided rover's motor direction property.
+ */
+enum MotorDirection rover_get_motor_direction( rover r );
+
+/**
  * This function returns a vector that represents the duty-cycles of
  * its two driving motors.
  */
-vec2d rover_get_direction( rover r );
+//vec2d rover_get_direction( rover r );
 
 /**
  * This function changes the duty-cycles of the provided rover's two
@@ -66,7 +71,7 @@ void rover_change_direction( rover* rp, enum MotorDirection direction );
  * This function rotates the provided stepper motor in the direction
  * provided.
  */
-void rover_rotate_zaxis(rover* rp, enum StepRotation rotation);
+void rover_rotate_z( rover* rp, enum StepRotation rotation );
 
 /**
  * Prints information about the rover.

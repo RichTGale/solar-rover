@@ -16,23 +16,22 @@
  * The data contained within the app data-type.
  */
 struct app_data {
-    rpi_info rpiinfo;                   // Information about the raspberry pi
-    rover r;                            // The rover
-    enum MotorDirection new_direction;  // The new motor direction
-    bool is_running;                    // Whether the app is running
-    bool start_screen_on;               // Whether the starting screen is on
-    bool manual_drive_screen_on;        // Whether the control screen is on
+    rpi_info rpiinfo;                   /* Information about the raspberry pi. */
+    rover r;                            /* The rover. */
+    bool is_running;                    /* Whether the app is running. */
+    bool start_screen_on;               /* Whether the starting screen is on. */
+    bool manual_drive_screen_on;        /* Whether the control screen is on. */
 };
 
 /**
- * Prepares the provided app for use.
+ * This function initialises the app provided to it.
  */
 void app_init( app* ap )
 {
-    // Allocating memory for the app
+    /* Allocating memory for the app. */
     *ap = (app) malloc( sizeof( struct app_data ) );
     
-    // Setting up pi-gpio
+    /* Setting up pi-gpio. */
     fprintf( stdout, " - Setting up pi-gpio..\n" );
     setup();
 
@@ -41,22 +40,20 @@ void app_init( app* ap )
     fprintf( stdout, " - Getting rpi info..\n" );
     get_rpi_info( &(*ap)->rpiinfo );
 
-    // Preparing the rover
+    /* Preparing the rover. */
     fprintf( stdout, " - Setting up the rover..\n" );
     rover_init( &(*ap)->r );
 
-    // Initialising whether the app should continue running
+    /* Initialising whether the app should continue running. */
     (*ap)->is_running = true;
 
-    // Initialising which cli screen to draw
+    /* Initialising which cli screen to draw. */
     (*ap)->start_screen_on = true;
     (*ap)->manual_drive_screen_on = false;
-
-    (*ap)->new_direction = STOP;
 }
 
 /**
- * Ends the provided app.
+ * This function terminates the app provided to it.
  */
 void app_term( app* ap )
 {
@@ -71,20 +68,25 @@ void app_term( app* ap )
 }
 
 /**
- * Draws the app starting screen.
+ * This function draws the app start-screen.
  */
 void draw_start_screen(app a)
 {
-    vec2d origin;
-    vec2d bounds;
-    vec2d message_origin;
-    char* message = "<Press any key or 'q' to quit>";
+    vec2d origin;   /* The cursor position. */
+    vec2d bounds;   /* The size of the terminal. */
+    char* message;  /* A message. */
 
+    /* Cursor starts in the top left corner. */
     origin.x = 1;
     origin.y = 1;
+
+    /* Getting the bounds of the terminal. */
     bounds = termres();
 
-    // Drawing the program title
+    /* Setting the message. */
+    message = "<Press any key or 'q' to quit>";
+
+    /* Drawing the program title. */
     textmode(NORMAL);
     termprintfs("../../art/title.txt", &origin, WHITE, NORMAL);
 
@@ -94,13 +96,16 @@ void draw_start_screen(app a)
     print_rpi_info(a->rpiinfo);
 
     /* Printing the message. */
-    message_origin.x = 42/2 - (strlen(message) / 2);
-    message_origin.y = 24;
+    origin.x = 42/2 - (strlen(message) / 2);
+    origin.y = 24;
     textmode(BOLD);
-    termprint(message, message_origin);
+    termprint(message, origin);
     textmode(NORMAL);
 }
 
+/**
+ * This function draws the manual drive screen.
+ */
 void draw_manual_drive_screen( app a )
 {
     vec2d uarrow_origin;    /* Origin of the up arrow image. */
@@ -120,7 +125,7 @@ void draw_manual_drive_screen( app a )
 
     /* Draw a coloured arrow for the direction that was last pressed. Draw
      * white arrows for the rest. */    
-    switch ( a->new_direction )
+    switch ( rover_get_motor_direction( a->r ) )
     {
         case FORWARDS: 
             termprintfs("../../art/up_arrow.txt", &uarrow_origin, GREEN, BOLD);
@@ -154,56 +159,82 @@ void draw_manual_drive_screen( app a )
     }
 }
 
+/**
+ * This function updates the app provided to it based on the user input
+ * that is also provided to it.
+ */
 void update( app* ap, char user_in )
 {
+    /* Checking if the start-screen is on. */
     if ( (*ap)->start_screen_on )
     {
+        /* Checking what the user input. */
         switch ( user_in )
         {
+            /* Terminate the app. */
 	        case 'q' :  (*ap)->start_screen_on = false;
                         (*ap)->is_running = false;
                         break;
+
+            /* Show the manual drive screen. */
             default  :  (*ap)->start_screen_on = false;
                         (*ap)->manual_drive_screen_on = true;
                         break;
         }
     }
+
+    /* Checking if the manual drive screen is on. */
     else if ( (*ap)->manual_drive_screen_on )
     {
+        /* Checking what the user input. */
         switch ( user_in )
         {
+            /* Accelerate the rover. */
             case 'w' :  rover_change_direction( &(*ap)->r, FORWARDS );
-                        (*ap)->new_direction = FORWARDS;
                         break;
+
+            /* Turn the rover left. */
             case 'a' :  rover_change_direction( &(*ap)->r, LEFT );
-                        (*ap)->new_direction = LEFT;
                         break;
+
+            /* Decellerate the rover. */
             case 's' :  rover_change_direction( &(*ap)->r, BACKWARDS );
-                        (*ap)->new_direction = BACKWARDS;
                         break;
+
+            /* Turn the rover right. */
             case 'd' :  rover_change_direction( &(*ap)->r, RIGHT );
-                        (*ap)->new_direction = RIGHT;
                         break;
+
+            /* Stop the rover. */
             case 'x' :  rover_change_direction( &(*ap)->r, STOP );
-                        (*ap)->new_direction = STOP;
                         break;
-            case 'j' :  rover_rotate_zaxis( &(*ap)->r, CLOCKWISE );
+
+            /* Rotate the rover's solar rack clockwise. */
+            case 'j' :  rover_rotate_z( &(*ap)->r, CLOCKWISE );
                         break;
-            case 'l' :  rover_rotate_zaxis( &(*ap)->r, ANTICLOCKWISE );
+
+            /* Rotate the rover's solar rack anticlockwise. */
+            case 'l' :  rover_rotate_z( &(*ap)->r, ANTICLOCKWISE );
                         break;
+
+            /* Turn on the start screen. */
             case 'q' :  (*ap)->start_screen_on = true;
                         (*ap)->manual_drive_screen_on = false;
                         rover_change_direction( &(*ap)->r, STOP );
-                        (*ap)->new_direction = STOP;
                         break;
         }
     }
 }
 
+/**
+ * This function draws the app to the screen.
+ */
 void draw( app a )
 {
+    /* Clearing the terminal. */
     termclear();
 
+    /* Drawing a screen. */
     if ( a->start_screen_on )
     {
         draw_start_screen( a );
@@ -215,20 +246,23 @@ void draw( app a )
 }
 
 /**
- * Runs the provided app.
+ * This function runs the app provided to it.
  */
 void app_exec( app* ap )
 {
-    struct timespec end_last_frame; // Framerate timer.
-    char user_in;
+    struct timespec end_last_frame; /* Framerate timer. */
+    char user_in;                   /* User input. */
 
-    // Starting the timer.
+    /* Starting the timer. */
     start_timer( &end_last_frame );
  
+    /* Drawing the first screen. */
     draw( *ap );
 
+    /* Checking if the app is running. */
     while ( (*ap)->is_running )
     {
+        /* Checking if it's time to run a frame. */
 	    if ( check_timer( end_last_frame, NANOS_PER_FRAME ) )
 	    {
             /* Getting user input. */
@@ -237,6 +271,7 @@ void app_exec( app* ap )
             /* Processing user input. */
 	        update( ap, user_in );
 
+            /* Drawing the app. */
             draw( *ap );
 
             /* Restarting the framerate timer. */

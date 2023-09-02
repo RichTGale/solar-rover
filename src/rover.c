@@ -30,15 +30,19 @@ void rover_init( rover* rp )
     *rp=(rover) malloc( sizeof( struct rover_data ) );
 
     // Initialising the motors.
-    motor_init(&(*rp)->lmotor, ENA_PIN, IN1_PIN, IN2_PIN, 100);
-    motor_init(&(*rp)->rmotor, ENB_PIN, IN3_PIN, IN4_PIN, 100);
+    motor_init( &(*rp)->lmotor, ENA_PIN, IN1_PIN, IN2_PIN, 100 );
+    motor_init( &(*rp)->rmotor, ENB_PIN, IN3_PIN, IN4_PIN, 100 );
 
     /* Initalising the stepper motor. */
-    stepper_init(&(*rp)->rotator, 2048, 22, 10, 24, 9);
-    stepper_steps_per_sec(&(*rp)->rotator, 400);
+    stepper_init( &(*rp)->rotator, 2048, 22, 10, 24, 9 );
+    stepper_steps_per_sec( &(*rp)->rotator, 400 );
+    (*rp)->step_rotation = NOT_ROTATING;
 
     // Setting the rover's acceleration rate.
-    (*rp)->acc=25;
+    (*rp)->acc = 25;
+    
+    /* Initialising the direction of the rover. */
+    (*rp)->motor_direction = STOP;
 }
 
 /**
@@ -56,24 +60,34 @@ void rover_free( rover* rp )
 }
 
 /**
- * This function returns the provided rover's velocity/speed.
+ * This function returns the provided rover's motor direction property.
  */
-vec2d rover_get_direction( rover r )
+enum MotorDirection rover_get_motor_direction( rover r )
 {
-    vec2d direction;
-
-    direction.x = motor_get_dutycycle(r->lmotor);
-    direction.y = motor_get_dutycycle(r->rmotor);
-
-    return direction;
+    return r->motor_direction;
 }
+
+///**
+// * This function returns the provided rover's velocity/speed.
+// */
+//vec2d rover_get_direction( rover r )
+//{
+//    vec2d direction;
+//
+//    direction.x = motor_get_dutycycle(r->lmotor);
+//    direction.y = motor_get_dutycycle(r->rmotor);
+//
+//    return direction;
+//}
 
 /**
  * Alters the rover's velocity.
  */
-void rover_change_direction(rover* rp, enum MotorDirection direction)
+void rover_change_direction( rover* rp, enum MotorDirection direction )
 {
-    switch ( direction )
+    (*rp)->motor_direction = direction;
+
+    switch ( (*rp)->motor_direction )
     {
         case FORWARDS : 
             motor_change_dutycycle( &(*rp)->lmotor, (*rp)->acc );
@@ -98,7 +112,7 @@ void rover_change_direction(rover* rp, enum MotorDirection direction)
     }
 }
 
-void rover_rotate_zaxis(rover* rp, enum StepRotation rotation)
+void rover_rotate_z(rover* rp, enum StepRotation rotation)
 {
     /* The number of teeth on the stepper gear is 60, the number on the
      * internal gear is 95. Gear ratio = 95:60 = 1.58333 : 1.
