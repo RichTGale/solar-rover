@@ -210,11 +210,19 @@ void update( app* ap, char user_in )
                         break;
 
             /* Rotate the rover's solar rack clockwise. */
-            case 'j' :  rover_rotate_z( &(*ap)->r, CLOCKWISE );
+            case 'i' :  rover_step_x_1degree( &(*ap)->r, CLOCKWISE );
                         break;
 
             /* Rotate the rover's solar rack anticlockwise. */
-            case 'l' :  rover_rotate_z( &(*ap)->r, ANTICLOCKWISE );
+            case 'k' :  rover_step_x_1degree( &(*ap)->r, ANTICLOCK );
+                        break;
+
+            /* Rotate the rover's solar rack clockwise. */
+            case 'j' :  rover_step_z_1degree( &(*ap)->r, ANTICLOCK );
+                        break;
+
+            /* Rotate the rover's solar rack anticlockwise. */
+            case 'l' :  rover_step_z_1degree( &(*ap)->r, CLOCKWISE );
                         break;
 
             /* Turn on the start screen. */

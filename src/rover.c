@@ -15,9 +15,11 @@
 struct rover_data {
     motor rmotor;
     motor lmotor;
-    stepper rotator;
+    stepper zstep;
+    stepper xstep;
     enum MotorDirection motor_direction;
-    enum StepRotation step_rotation;
+    enum StepperRotation zstep_rotation;
+    enum StepperRotation xstep_rotation;
     int acc;
 };
 
@@ -30,19 +32,20 @@ void rover_init( rover* rp )
     *rp=(rover) malloc( sizeof( struct rover_data ) );
 
     // Initialising the motors.
-    motor_init( &(*rp)->lmotor, ENA_PIN, IN1_PIN, IN2_PIN, 100 );
-    motor_init( &(*rp)->rmotor, ENB_PIN, IN3_PIN, IN4_PIN, 100 );
-
-    /* Initalising the stepper motor. */
-    stepper_init( &(*rp)->rotator, 2048, 22, 10, 24, 9 );
-    stepper_steps_per_sec( &(*rp)->rotator, 400 );
-    (*rp)->step_rotation = NOT_ROTATING;
-
-    // Setting the rover's acceleration rate.
+    motor_init( &(*rp)->lmotor, MOTOR_ENA, MOTOR_IN1, MOTOR_IN2, 100 );
+    motor_init( &(*rp)->rmotor, MOTOR_ENB, MOTOR_IN3, MOTOR_IN4, 100 );
     (*rp)->acc = 25;
-    
-    /* Initialising the direction of the rover. */
     (*rp)->motor_direction = STOP;
+
+    /* Initalising the stepper motors. */
+    stepper_init( &(*rp)->zstep, 2048, ZSTEP_IN1, ZSTEP_IN2, 
+                                       ZSTEP_IN3, ZSTEP_IN4 );
+    stepper_init( &(*rp)->xstep, 2048, XSTEP_IN1, XSTEP_IN2,
+                                       XSTEP_IN3, XSTEP_IN4 );
+    stepper_steps_per_sec( &(*rp)->zstep, 400 );
+    stepper_steps_per_sec( &(*rp)->xstep, 400 );
+    (*rp)->zstep_rotation = NO_ROTATE;
+    (*rp)->xstep_rotation = NO_ROTATE;
 }
 
 /**
@@ -53,7 +56,10 @@ void rover_free( rover* rp )
     // Cleaning up the motors
     motor_free(&(*rp)->rmotor);
     motor_free(&(*rp)->lmotor);
-    stepper_free(&(*rp)->rotator);
+
+    /* Cleaning up the stepper motors. */
+    stepper_free(&(*rp)->zstep);
+    stepper_free(&(*rp)->xstep);
 
     // Destroying the rover.
     free(*rp);
@@ -112,13 +118,45 @@ void rover_change_direction( rover* rp, enum MotorDirection direction )
     }
 }
 
-void rover_rotate_z(rover* rp, enum StepRotation rotation)
+/**
+ * This function rotates the z axis of the solar rack of the provided rover
+ * in the direction provided by one degree.
+ */
+void rover_step_z_1degree(rover* rp, enum StepperRotation rotation)
 {
     /* The number of teeth on the stepper gear is 60, the number on the
-     * internal gear is 95. Gear ratio = 95:60 = 1.58333 : 1.
-     * 2048 steps * 1.58333 = ~3242 steps per internal gear revolution. */
-    if (rotation == CLOCKWISE) stepper_step(&(*rp)->rotator, 3242);
-    if (rotation == ANTICLOCKWISE) stepper_step(&(*rp)->rotator, -3242);
+     * internal gear is 95.
+     * Gear ratio = 95:60 = 1.58333:1.
+     * 2048 steps * 1.58333 = ~3242 steps per internal gear revolution.
+     * 3242 steps / 360 degress = ~9 steps per degree of the internal gear. */
+    const int ONE_DEGREE = 9;
+
+    /* Rotating by one degree. */
+    if (rotation == CLOCKWISE) stepper_step(&(*rp)->zstep, ONE_DEGREE);
+    if (rotation == ANTICLOCK) stepper_step(&(*rp)->zstep, -ONE_DEGREE);
+}
+
+/**
+ * This function rotates the x axis of the solar rack of the provided rover
+ * in the direction provided by one degree.
+ */
+void rover_step_x_1degree( rover* rp, enum StepperRotation rotation )
+{
+    /* Judging from the 3d models simulations in blender, 7.5 revolutions
+     * of the worm gear equals 1 revolution of the spur gear.
+     * Gear ratio = 7.5:1. 
+     * 2048 steps * 7.5 = 15360 steps per revolution of the spur gear. 
+     * There are 200 teeth on the internal gear (if it was whole) and there
+     * are 15 teeth on the spur gear. 
+     * Gear ratio = 200:15 = 13.33333:1.
+     * 15360 steps * 13.33333 = ~204,800 steps per internal gear revolution.
+     * 204800 steps / 360 degress = ~568 steps per degree of the internal
+     * gear. */
+    const int ONE_DEGREE = 568;
+
+    /* Rotating by one degree. */
+    if (rotation == CLOCKWISE) stepper_step(&(*rp)->xstep, ONE_DEGREE);
+    if (rotation == ANTICLOCK) stepper_step(&(*rp)->xstep, -ONE_DEGREE);
 }
 
 /**

@@ -17,13 +17,23 @@
 #include "motor.h"
 #include "stepper.h"
 
-// Raspberry pi gpio pin numbers for the motor driver.
-#define ENA_PIN 12
-#define ENB_PIN 13 
-#define IN1_PIN 17
-#define IN2_PIN 27
-#define IN3_PIN 5
-#define IN4_PIN 6
+/* Raspberry pi gpio pin numbers for the dc motor driver. */
+#define MOTOR_ENA 12
+#define MOTOR_ENB 13
+#define MOTOR_IN1 17
+#define MOTOR_IN2 27
+#define MOTOR_IN3 5
+#define MOTOR_IN4 6
+
+/* Raspberry pi gpio pin number for the stepper motor drivers. */
+#define XSTEP_IN1 22
+#define XSTEP_IN2 10
+#define XSTEP_IN3 24
+#define XSTEP_IN4 9
+#define ZSTEP_IN1 26
+#define ZSTEP_IN2 20
+#define ZSTEP_IN3 19
+#define ZSTEP_IN4 16
 
 /**
  * These are thge different ways that the dc motors can move.
@@ -33,7 +43,7 @@ enum MotorDirection { FORWARDS, BACKWARDS, STOP, LEFT, RIGHT };
 /**
  * These are the different ways that the stepper motors can move.
  */
-enum StepRotation { CLOCKWISE, ANTICLOCKWISE, NOT_ROTATING };
+enum StepperRotation { CLOCKWISE, ANTICLOCK, NO_ROTATE };
 
 /**
  * The Rover data structure.
@@ -68,10 +78,16 @@ enum MotorDirection rover_get_motor_direction( rover r );
 void rover_change_direction( rover* rp, enum MotorDirection direction );
 
 /**
- * This function rotates the provided stepper motor in the direction
- * provided.
+ * This function rotates the z axis of the solar rack of the provided rover
+ * in the direction provided by one degree.
  */
-void rover_rotate_z( rover* rp, enum StepRotation rotation );
+void rover_step_z_1degree( rover* rp, enum StepperRotation rotation );
+
+/**
+ * This function rotates the x axis of the solar rack of the provided rover
+ * in the direction provided by one degree.
+ */
+void rover_step_x_1degree( rover* rp, enum StepperRotation rotation );
 
 /**
  * Prints information about the rover.
