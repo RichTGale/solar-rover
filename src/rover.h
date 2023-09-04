@@ -4,7 +4,7 @@
  * Data structure and function declarations for a remote-control rover.
  *
  * Author: Richard Gale.
- * Version: 2nd April, 2023.
+ * Version: 4th September, 2023.
  */
 
 #ifndef ROVER_H

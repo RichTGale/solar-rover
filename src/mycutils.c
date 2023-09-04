@@ -4,10 +4,21 @@
  * This file contains the definitions of various utility functions.
  *
  * Author: Richard Gale
- * Version: 16th July, 2023
+ * Version: 4th September, 2023
  */
 
 #include "mycutils.h"
+
+/******************************** Maths **************************************/
+
+/**
+ * This function maps value x to a value within a desired range.
+ */
+double map(double x, double in_min,  double in_max, 
+                     double out_min, double out_max)
+{
+    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
 
 /********************************* Time **************************************/
 

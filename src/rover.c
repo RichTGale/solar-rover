@@ -4,7 +4,7 @@
  * Data-structure and function definitions for a remote-control rover.
  *
  * Author: Richard Gale.
- * Version: 2nd April, 2023.
+ * Version: 4th September, 2023.
  */
 
 #include "rover.h"
@@ -87,7 +87,7 @@ enum MotorDirection rover_get_motor_direction( rover r )
 //}
 
 /**
- * Alters the rover's velocity.
+ * This function changes the direction vector in which the rover is travelling.
  */
 void rover_change_direction( rover* rp, enum MotorDirection direction )
 {
@@ -99,8 +99,7 @@ void rover_change_direction( rover* rp, enum MotorDirection direction )
             motor_change_dutycycle( &(*rp)->lmotor, (*rp)->acc );
             motor_change_dutycycle( &(*rp)->rmotor, (*rp)->acc );
             break;
-        case BACKWARDS :
-	        motor_change_dutycycle( &(*rp)->lmotor, (*rp)->acc*-1 );
+        case BACKWARDS : motor_change_dutycycle( &(*rp)->lmotor, (*rp)->acc*-1 );
             motor_change_dutycycle( &(*rp)->rmotor, (*rp)->acc*-1 );
             break;
         case LEFT :
@@ -132,8 +131,10 @@ void rover_step_z_1degree(rover* rp, enum StepperRotation rotation)
     const int ONE_DEGREE = 9;
 
     /* Rotating by one degree. */
-    if (rotation == CLOCKWISE) stepper_step(&(*rp)->zstep, ONE_DEGREE);
-    if (rotation == ANTICLOCK) stepper_step(&(*rp)->zstep, -ONE_DEGREE);
+    if (rotation == CLOCKWISE)
+        stepper_step(&(*rp)->zstep, ONE_DEGREE);
+    else if (rotation == ANTICLOCK)
+        stepper_step(&(*rp)->zstep, -ONE_DEGREE);
 }
 
 /**
@@ -155,8 +156,10 @@ void rover_step_x_1degree( rover* rp, enum StepperRotation rotation )
     const int ONE_DEGREE = 568;
 
     /* Rotating by one degree. */
-    if (rotation == CLOCKWISE) stepper_step(&(*rp)->xstep, ONE_DEGREE);
-    if (rotation == ANTICLOCK) stepper_step(&(*rp)->xstep, -ONE_DEGREE);
+    if (rotation == CLOCKWISE)
+        stepper_step(&(*rp)->xstep, ONE_DEGREE);
+    else if (rotation == ANTICLOCK)
+        stepper_step(&(*rp)->xstep, -ONE_DEGREE);
 }
 
 /**

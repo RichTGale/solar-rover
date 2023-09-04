@@ -3,10 +3,8 @@
  *
  * This file contains the data-structure and function definitions
  * for an app.
- * An app is a type that contains everything that makes up a complete 
- * Command Line Interface (CLI) application.
  *
- * Version: 4th April, 2023.
+ * Version: 4th September, 2023.
  * Author(s): Richard Gale
  */
 
@@ -172,14 +170,16 @@ void update( app* ap, char user_in )
         switch ( user_in )
         {
             /* Terminate the app. */
-	        case 'q' :  (*ap)->start_screen_on = false;
-                        (*ap)->is_running = false;
-                        break;
+	        case 'q' :
+                (*ap)->start_screen_on = false;
+                (*ap)->is_running = false;
+                break;
 
             /* Show the manual drive screen. */
-            default  :  (*ap)->start_screen_on = false;
-                        (*ap)->manual_drive_screen_on = true;
-                        break;
+            default  :
+                (*ap)->start_screen_on = false;
+                (*ap)->manual_drive_screen_on = true;
+                break;
         }
     }
 
@@ -190,46 +190,56 @@ void update( app* ap, char user_in )
         switch ( user_in )
         {
             /* Accelerate the rover. */
-            case 'w' :  rover_change_direction( &(*ap)->r, FORWARDS );
-                        break;
+            case 'w' :  
+                rover_change_direction( &(*ap)->r, FORWARDS );
+                break;
 
             /* Turn the rover left. */
-            case 'a' :  rover_change_direction( &(*ap)->r, LEFT );
-                        break;
+            case 'a' :
+                rover_change_direction( &(*ap)->r, LEFT );
+                break;
 
             /* Decellerate the rover. */
-            case 's' :  rover_change_direction( &(*ap)->r, BACKWARDS );
-                        break;
+            case 's' :
+                rover_change_direction( &(*ap)->r, BACKWARDS );
+                break;
 
             /* Turn the rover right. */
-            case 'd' :  rover_change_direction( &(*ap)->r, RIGHT );
-                        break;
+            case 'd' :
+                rover_change_direction( &(*ap)->r, RIGHT );
+                break;
 
             /* Stop the rover. */
-            case 'x' :  rover_change_direction( &(*ap)->r, STOP );
-                        break;
+            case 'x' :
+                rover_change_direction( &(*ap)->r, STOP );
+                break;
 
             /* Rotate the rover's solar rack clockwise. */
-            case 'i' :  rover_step_x_1degree( &(*ap)->r, CLOCKWISE );
-                        break;
+            case 'i' :
+                rover_step_x_1degree( &(*ap)->r, CLOCKWISE );
+                break;
 
             /* Rotate the rover's solar rack anticlockwise. */
-            case 'k' :  rover_step_x_1degree( &(*ap)->r, ANTICLOCK );
-                        break;
+            case 'k' :
+                rover_step_x_1degree( &(*ap)->r, ANTICLOCK );
+                break;
 
             /* Rotate the rover's solar rack clockwise. */
-            case 'j' :  rover_step_z_1degree( &(*ap)->r, ANTICLOCK );
-                        break;
+            case 'j' :
+                rover_step_z_1degree( &(*ap)->r, ANTICLOCK );
+                break;
 
             /* Rotate the rover's solar rack anticlockwise. */
-            case 'l' :  rover_step_z_1degree( &(*ap)->r, CLOCKWISE );
-                        break;
+            case 'l' :
+                rover_step_z_1degree( &(*ap)->r, CLOCKWISE );
+                break;
 
             /* Turn on the start screen. */
-            case 'q' :  (*ap)->start_screen_on = true;
-                        (*ap)->manual_drive_screen_on = false;
-                        rover_change_direction( &(*ap)->r, STOP );
-                        break;
+            case 'q' :
+                (*ap)->start_screen_on = true;
+                (*ap)->manual_drive_screen_on = false;
+                rover_change_direction( &(*ap)->r, STOP );
+                break;
         }
     }
 }

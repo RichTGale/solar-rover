@@ -4,8 +4,8 @@
  * Controls a remote-control vehicle.
  * Uses the pi-gpio library ( https://github.com/Milliways2/pi-gpio ).
  *
- * Version: April 4th, 2023.
- * Author: Richard Gale.
+ * Version: 4th September, 2023.
+ * Author(s): Richard Gale.
  */
 
 #include <stdlib.h>

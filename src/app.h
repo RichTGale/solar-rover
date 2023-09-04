@@ -3,10 +3,8 @@
  *
  * This file contains the publicly available data-structures and 
  * function for an app. 
- * An app is a type that contains everything that makes up a complete 
- * Command Line Interface (CLI) application.
  *
- * Version: 4th April, 2023.
+ * Version: 4th September, 2023.
  * Author(s): Richard Gale
  */
 
