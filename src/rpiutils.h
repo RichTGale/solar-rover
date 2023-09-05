@@ -1,3 +1,12 @@
+/**
+ * rpiutils.h
+ *
+ * This file contains function prototype declarations for various utility
+ * functions for the raspberry pi computer.
+ *
+ * Version: 1.0.0
+ * Author(s): Richard Gale
+ */
 
 #ifndef RPIUTILS_H
 #define RPIUTILS_H

@@ -1,10 +1,10 @@
 /**
  * mycutils.c
  *
- * This file contains the definitions of various utility functions.
+ * This file contains the definitions of various utility functions and types.
  *
+ * Version: 1.0.0
  * Author: Richard Gale
- * Version: 4th September, 2023
  */
 
 #include "mycutils.h"

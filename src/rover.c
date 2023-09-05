@@ -1,174 +1,108 @@
 /**
  * rover.c
  *
- * Data-structure and function definitions for a remote-control rover.
+ * This file contains the internal data-structure and function definitions
+ * for the rover type.
  *
- * Author: Richard Gale.
- * Version: 4th September, 2023.
+ * Version: 0.1.0
+ * Author: Richard Gale
  */
 
 #include "rover.h"
 
 /**
- * The data contained within the rover data structure.
+ * This is the internal data of the rover data-type.
  */
 struct rover_data {
-    motor rmotor;
-    motor lmotor;
-    stepper zstep;
-    stepper xstep;
-    enum MotorDirection motor_direction;
-    enum StepperRotation zstep_rotation;
-    enum StepperRotation xstep_rotation;
-    int acc;
+    interface i;            /* Allows a user to control the rover. */
+    drive d;                /* Controls the movement of the driving motors. */
+    rack r;                 /* Controls the movement of the rack motors. */
+    bool is_running;        /* Whether the rover is running. */
 };
 
 /**
- * Initialises the rover
+ * This function initialises the rover supplied to it.
  */
-void rover_init( rover* rp )
+void rover_init(rover* rp)
 {
-    // Allocating memory for the rover.
-    *rp=(rover) malloc( sizeof( struct rover_data ) );
+    /* Allocate memory to the rover. */
+    *rp = (rover) malloc(sizeof(struct rover_data));
 
-    // Initialising the motors.
-    motor_init( &(*rp)->lmotor, MOTOR_ENA, MOTOR_IN1, MOTOR_IN2, 100 );
-    motor_init( &(*rp)->rmotor, MOTOR_ENB, MOTOR_IN3, MOTOR_IN4, 100 );
-    (*rp)->acc = 25;
-    (*rp)->motor_direction = STOP;
+    /* Set up pi-gpio. */
+    fprintf(stdout, " - Setting up pi-gpio...\n");
+    setup();
 
-    /* Initalising the stepper motors. */
-    stepper_init( &(*rp)->zstep, 2048, ZSTEP_IN1, ZSTEP_IN2, 
-                                       ZSTEP_IN3, ZSTEP_IN4 );
-    stepper_init( &(*rp)->xstep, 2048, XSTEP_IN1, XSTEP_IN2,
-                                       XSTEP_IN3, XSTEP_IN4 );
-    stepper_steps_per_sec( &(*rp)->zstep, 400 );
-    stepper_steps_per_sec( &(*rp)->xstep, 400 );
-    (*rp)->zstep_rotation = NO_ROTATE;
-    (*rp)->xstep_rotation = NO_ROTATE;
+    /* Initialise rover properties. */
+    fprintf(stdout, " - Setting up the interface...\n");
+    interface_init(&(*rp)->i);
+    fprintf(stdout, " - Setting up the drive...\n");
+    drive_init(&(*rp)->d);
+    fprintf(stdout, " - Setting up the rack...\n");
+    rack_init(&(*rp)->r);
+    (*rp)->is_running = true;
 }
 
 /**
- * Destroys the rover.
+ * This function terminates the rover supplied to it.
  */
-void rover_free( rover* rp )
+void rover_term(rover* rp)
 {
-    // Cleaning up the motors
-    motor_free(&(*rp)->rmotor);
-    motor_free(&(*rp)->lmotor);
+    /* Terminate rover properties. */
+    interface_term(&(*rp)->i);
+    drive_term(&(*rp)->d);
+    rack_term(&(*rp)->r);
 
-    /* Cleaning up the stepper motors. */
-    stepper_free(&(*rp)->zstep);
-    stepper_free(&(*rp)->xstep);
-
-    // Destroying the rover.
+    /* De-allocate memory from the rover. */
     free(*rp);
 }
 
-/**
- * This function returns the provided rover's motor direction property.
- */
-enum MotorDirection rover_get_motor_direction( rover r )
+void update(rover* rp, commands cmds)
 {
-    return r->motor_direction;
-}
-
-///**
-// * This function returns the provided rover's velocity/speed.
-// */
-//vec2d rover_get_direction( rover r )
-//{
-//    vec2d direction;
-//
-//    direction.x = motor_get_dutycycle(r->lmotor);
-//    direction.y = motor_get_dutycycle(r->rmotor);
-//
-//    return direction;
-//}
-
-/**
- * This function changes the direction vector in which the rover is travelling.
- */
-void rover_change_direction( rover* rp, enum MotorDirection direction )
-{
-    (*rp)->motor_direction = direction;
-
-    switch ( (*rp)->motor_direction )
+    switch (cmds.interface_command)
     {
-        case FORWARDS : 
-            motor_change_dutycycle( &(*rp)->lmotor, (*rp)->acc );
-            motor_change_dutycycle( &(*rp)->rmotor, (*rp)->acc );
-            break;
-        case BACKWARDS : motor_change_dutycycle( &(*rp)->lmotor, (*rp)->acc*-1 );
-            motor_change_dutycycle( &(*rp)->rmotor, (*rp)->acc*-1 );
-            break;
-        case LEFT :
-	        motor_change_dutycycle( &(*rp)->lmotor, (*rp)->acc*-1 );
-            motor_change_dutycycle( &(*rp)->rmotor, (*rp)->acc );
-            break; 
-        case RIGHT :
-	        motor_change_dutycycle( &(*rp)->lmotor, (*rp)->acc );
-            motor_change_dutycycle( &(*rp)->rmotor, (*rp)->acc*-1 );
-            break;
-        case STOP :
-            motor_change_dutycycle( &(*rp)->lmotor, 0 );
-            motor_change_dutycycle( &(*rp)->rmotor, 0 );
+        case TERMINATE :
+            (*rp)->is_running = false;
             break;
     }
 }
 
 /**
- * This function rotates the z axis of the solar rack of the provided rover
- * in the direction provided by one degree.
+ * This function runs the rover supplied to it.
  */
-void rover_step_z_1degree(rover* rp, enum StepperRotation rotation)
+void rover_exec(rover* rp)
 {
-    /* The number of teeth on the stepper gear is 60, the number on the
-     * internal gear is 95.
-     * Gear ratio = 95:60 = 1.58333:1.
-     * 2048 steps * 1.58333 = ~3242 steps per internal gear revolution.
-     * 3242 steps / 360 degress = ~9 steps per degree of the internal gear. */
-    const int ONE_DEGREE = 9;
+    struct timespec end_last_frame; /* The time at the end of the last frame. */
+    commands cmds;  /* Commands for the rover to execute. */
 
-    /* Rotating by one degree. */
-    if (rotation == CLOCKWISE)
-        stepper_step(&(*rp)->zstep, ONE_DEGREE);
-    else if (rotation == ANTICLOCK)
-        stepper_step(&(*rp)->zstep, -ONE_DEGREE);
+    /* Because no frames have run yet, initialise the time at the end of the
+     * last frame to be now. */
+    start_timer(&end_last_frame);
+
+    /* Draw the interface in its initial state. */
+    interface_display((*rp)->i, (*rp)->d, (*rp)->r);
+
+    /* Check if the rover is still running. */
+    while((*rp)->is_running)
+    {
+        /* Check if it's time to run a frame. */
+        if (check_timer(end_last_frame, NANOS_PER_FRAME))
+        {
+            /* Get new commands and update interface. */
+            cmds = interface_input_command(&(*rp)->i);
+            interface_update(&(*rp)->i, cmds.interface_command);
+
+            /* Update drive with new commands. */
+            drive_update(&(*rp)->d, cmds.drive_command);
+
+            /* Update rack with new commands. */
+            rack_update(&(*rp)->r, cmds.rack_command);
+
+            /* Update the rover. */
+            update(rp, cmds);
+
+            /* Draw the interface. */
+            interface_display((*rp)->i, (*rp)->d, (*rp)->r);
+        }
+    }
 }
 
-/**
- * This function rotates the x axis of the solar rack of the provided rover
- * in the direction provided by one degree.
- */
-void rover_step_x_1degree( rover* rp, enum StepperRotation rotation )
-{
-    /* Judging from the 3d models simulations in blender, 7.5 revolutions
-     * of the worm gear equals 1 revolution of the spur gear.
-     * Gear ratio = 7.5:1. 
-     * 2048 steps * 7.5 = 15360 steps per revolution of the spur gear. 
-     * There are 200 teeth on the internal gear (if it was whole) and there
-     * are 15 teeth on the spur gear. 
-     * Gear ratio = 200:15 = 13.33333:1.
-     * 15360 steps * 13.33333 = ~204,800 steps per internal gear revolution.
-     * 204800 steps / 360 degress = ~568 steps per degree of the internal
-     * gear. */
-    const int ONE_DEGREE = 568;
-
-    /* Rotating by one degree. */
-    if (rotation == CLOCKWISE)
-        stepper_step(&(*rp)->xstep, ONE_DEGREE);
-    else if (rotation == ANTICLOCK)
-        stepper_step(&(*rp)->xstep, -ONE_DEGREE);
-}
-
-/**
- * Prints information about the rover.
- */
-void rover_print( rover r )
-{
-    // Printing information about the rover's motors.
-    motor_print( r->lmotor );
-    fprintf( stdout, " " );
-    motor_print( r->rmotor );
-}

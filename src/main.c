@@ -1,37 +1,21 @@
-/**
- * main.c
- * 
- * Controls a remote-control vehicle.
- * Uses the pi-gpio library ( https://github.com/Milliways2/pi-gpio ).
- *
- * Version: 4th September, 2023.
- * Author(s): Richard Gale.
- */
 
 #include <stdlib.h>
 
-#include "app.h"
+#include "rover.h"
 
-int main( int argc, char* argv[] )
+int main()
 {
-    // The application
-    app a;
+    rover r;    /* The solar rover. */
 
-    // Preparing the app
-    fprintf( stdout, "Setting up..\n" );
-    app_init( &a );
-    fprintf( stdout, "Done\n" );
+    /* Initialise the rover. */
+    rover_init(&r);
 
-    // Running the app
-    fprintf( stdout, "Running the app..\n" );
-    app_exec( &a );
+    /* Run the rover. */
+    rover_exec(&r);
 
-    // Cleaning up the app
-    system( "tput clear" );
-    fprintf( stdout, "Cleaning up..\n" );
-    app_term( &a );
+    /* Terminate the rover. */
+    rover_term(&r);
 
-    // Exiting the program
-    fprintf( stdout, "Exiting the program..\n" );
+    /* Exit the program. */
     exit( EXIT_SUCCESS );
 }

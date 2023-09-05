@@ -1,3 +1,12 @@
+/**
+ * rpiutils.c
+ *
+ * This fle contains the function definitions for various utility
+ * functions for the raspberry pi computer.
+ *
+ * Version: 1.0.0
+ * Author(s): Richard Gale
+ */
 
 #include "rpiutils.h"
 

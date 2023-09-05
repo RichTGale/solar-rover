@@ -1,11 +1,12 @@
 /**
  * mycutils.h
  *
- * This file contains the public declarations for various
- * utility funtions.
+ * This file containsi public data-structures and function prototype declarations 
+ * for various utility funtions and types, as well as enumerations relating
+ * to them.
  *
+ * Version: 1.0.0
  * Author: Richard Gale
- * Version: 4th September, 2023
  */
 
 #ifndef MYCUTILS_H
