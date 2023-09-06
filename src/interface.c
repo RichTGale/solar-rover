@@ -14,9 +14,9 @@
  * This is the internal data of the interface type.
  */
 struct interface_data {
-    bool start_screen_on;
-    bool drive_screen_on;
-    bool rack_screen_on;
+    bool start_screen_on;   /* Whether the start screen is on. */
+    bool drive_screen_on;   /* Whether the drive screen is on. */
+    bool rack_screen_on;    /* Whether the rack screen is on. */
 };
 
 /**
@@ -207,8 +207,8 @@ void display_start_screen()
     /* Get the bounds of the terminal. */
     bounds = termres();
 
-    /* Set the message. */
-    message = "<Press any key or 'q' to quit>";
+    /* Create the message. */
+    strfmt(&message, "'d': Drive | 'r': Rack | 'q': Quit");
 
     /* Draw the program title. */
     textmode(NORMAL);
@@ -220,20 +220,99 @@ void display_start_screen()
     print_rpi_info(info);
 
     /* Printing the message. */
-    origin.x = 42/2 - (strlen(message) / 2);
-    origin.y = 24;
+    origin.x = bounds.x / 2 - (strlen(message) / 2);
+    origin.y = bounds.y - 1;
     textmode(BOLD);
     termprint(message, origin);
     textmode(NORMAL);
 
+    /* De-allocating memory. */
+    free(message);
+}
+
+/** 
+ * This function visualises the duty cycle of a motor. 
+ */
+void display_drive_bar(char* label, int duty_cycle, vec2d location )
+{
+    vec2d label_location;   /* The location of the label. */
+    vec2d outline_location; /* The location of the outline. */
+    char* bar;              /* The bar. */
+ 
+    /* Create the bar. */
+    strfmt(&bar, "     ");
+
+    /* Display the label. */
+    label_location = (vec2d) { location.x - strlen(label) - 1, location.y };
+    termprint(label, label_location);
+
+    /* Set the location of the bar outline and display it. */
+    outline_location = (vec2d) { location.x - 1, location.y - 5 };
+    termprintfs("../../art/drive_bar.txt", &outline_location, WHITE, NORMAL);
+
+    /* Set the bar colour to red. */ 
+    curscolb(RED);
+
+    /* Display the bar. */
+    for (int i = 0; i < abs(duty_cycle) / 25; i++)
+    {
+        if (duty_cycle > 0 )
+            termprint(bar, (vec2d) { location.x, location.y - 1 - i } );
+        else if (duty_cycle < 0)
+            termprint(bar, (vec2d) { location.x, location.y + 1 + i } );
+    }
+
+    /* Revert text changes. */
+    textmode(NORMAL);
+
+    /* De-allocating memory. */
+    free(bar);
 }
 
 /**
  * This function displays the drive screen.
  */
-void display_drive_screen()
+void display_drive_screen(drive d)
 {
+    vec2d bounds;               /* The size of the terminal. */
+    vec2d lmotor_location;      /* The location of the left motor bar. */
+    vec2d rmotor_location;      /* The location to place the right motor bar. */
+    vec2d controls_location;    /* The location of the control instructions. */
+    char* title;                /* The name of the screen. */
+    char* controls;             /* The control instructions. */
+    
+    /* Get the size of the terminal. */
+    bounds = termres();
 
+    /* Create the screen title. */
+    strfmt(&title, "Drive Screen");
+
+    /* Display the screen title. */
+    termprint(title, (vec2d) { bounds.x / 2 - strlen(title), 1 });
+
+    /* Set the location of the drive bars. */
+    lmotor_location = (vec2d) { bounds.x / 4, 10 };
+    rmotor_location = (vec2d) { bounds.x / 4 * 3, 10 };
+    
+    /* Display the drive bars. */ 
+    display_drive_bar("Motor 1", drive_get_lmotor_duty_cycle(d), lmotor_location);
+    display_drive_bar("Motor 2", drive_get_rmotor_duty_cycle(d), rmotor_location);
+
+    /* Create the control instructions. */
+    strfmt(&controls, 
+            "'w': Accelerate | 'a': Left | 's': Decelerate | 'd': Right"
+            "'q': Start Screen | ");
+
+    /* Set the control instruction location. */
+    controls_location.x = bounds.x / 2 - strlen(controls) / 2;
+    controls_location.y = bounds.y - 1;
+
+    /* Print the control instructions. */
+    termprint(controls, controls_location);
+
+    /* De-allocating memory. */
+    free(title);
+    free(controls);
 }
 
 /**
@@ -254,7 +333,7 @@ void interface_display(interface i, drive d, rack r)
 
     /* Check which screen to display and display it. */
     if (i->start_screen_on) display_start_screen();
-    else if (i->drive_screen_on) display_drive_screen();
+    else if (i->drive_screen_on) display_drive_screen(d);
     else if (i->rack_screen_on) display_rack_screen();
 }
 

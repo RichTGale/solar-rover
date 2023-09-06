@@ -47,6 +47,24 @@ void drive_term(drive* dp)
 }
 
 /**
+ * This function returns the duty cycle of the lmotor property of the 
+ * drive provided to the function.
+ */
+int drive_get_lmotor_duty_cycle(drive d)
+{
+    return brushed_motor_get_duty_cycle(d->lmotor);
+}
+
+/**
+ * This function returns the duty cycle of the rmotor property of the 
+ * drive provided to the function.
+ */
+int drive_get_rmotor_duty_cycle(drive d)
+{
+    return brushed_motor_get_duty_cycle(d->rmotor);
+}
+
+/**
  * This function updates the drive provided to it.
  */
 void drive_update(drive* dp, enum DriveCommand drive_command)
@@ -82,7 +100,7 @@ void drive_update(drive* dp, enum DriveCommand drive_command)
         case TURN_RIGHT :
             brushed_motor_change_duty_cycle(&(*dp)->lmotor,
                                             (*dp)->acceleration_rate);
-            brushed_motor_change_duty_cycle(&(*dp)->lmotor,
+            brushed_motor_change_duty_cycle(&(*dp)->rmotor,
                                             -(*dp)->acceleration_rate);
             break;
 

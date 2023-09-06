@@ -26,6 +26,7 @@ struct rover_data {
 void rover_init(rover* rp)
 {
     /* Allocate memory to the rover. */
+    fprintf(stdout, " - Allocating memory...\n");
     *rp = (rover) malloc(sizeof(struct rover_data));
 
     /* Set up pi-gpio. */
@@ -47,17 +48,38 @@ void rover_init(rover* rp)
  */
 void rover_term(rover* rp)
 {
-    /* Terminate rover properties. */
-    interface_term(&(*rp)->i);
-    drive_term(&(*rp)->d);
+    /* Terminate the rover properties. */
+    fprintf(stdout, " - Terminating the rack...\n");
     rack_term(&(*rp)->r);
+    fprintf(stdout, " - Terminating the drive...\n");
+    drive_term(&(*rp)->d);
+    fprintf(stdout, " - Terminating the interface...\n");
+    interface_term(&(*rp)->i);
 
     /* De-allocate memory from the rover. */
+    fprintf(stdout, " - De-allocating memory...\n");
     free(*rp);
 }
 
-void update(rover* rp, commands cmds)
+void update(rover* rp)
 {
+    commands cmds;  /* Commands for the rover to execute. */
+    
+    /* Get commands from user input. */
+    cmds = interface_input_command(&(*rp)->i);
+
+    /* Update the interface. */
+    fprintf(stdout, " - Updating the interface...\n");
+    interface_update(&(*rp)->i, cmds.interface_command);
+
+    /* Update the drive. */
+    fprintf(stdout, " - Updating the drive...\n");
+    drive_update(&(*rp)->d, cmds.drive_command);
+
+    /* Update the rack. */
+    fprintf(stdout, " - Updating the rack...\n");
+    rack_update(&(*rp)->r, cmds.rack_command);
+
     switch (cmds.interface_command)
     {
         case TERMINATE :
@@ -66,19 +88,26 @@ void update(rover* rp, commands cmds)
     }
 }
 
+void display(rover r)
+{
+    /* Display the interface. */
+    fprintf(stdout, " - Drawing the interface...\n");
+    interface_display(r->i, r->d, r->r);
+}
+
 /**
  * This function runs the rover supplied to it.
  */
 void rover_exec(rover* rp)
 {
     struct timespec end_last_frame; /* The time at the end of the last frame. */
-    commands cmds;  /* Commands for the rover to execute. */
 
     /* Because no frames have run yet, initialise the time at the end of the
      * last frame to be now. */
     start_timer(&end_last_frame);
 
     /* Draw the interface in its initial state. */
+    fprintf(stdout, " - Drawing the interface in its initial state...\n");
     interface_display((*rp)->i, (*rp)->d, (*rp)->r);
 
     /* Check if the rover is still running. */
@@ -87,21 +116,11 @@ void rover_exec(rover* rp)
         /* Check if it's time to run a frame. */
         if (check_timer(end_last_frame, NANOS_PER_FRAME))
         {
-            /* Get new commands and update interface. */
-            cmds = interface_input_command(&(*rp)->i);
-            interface_update(&(*rp)->i, cmds.interface_command);
-
-            /* Update drive with new commands. */
-            drive_update(&(*rp)->d, cmds.drive_command);
-
-            /* Update rack with new commands. */
-            rack_update(&(*rp)->r, cmds.rack_command);
-
             /* Update the rover. */
-            update(rp, cmds);
+            update(rp);
 
-            /* Draw the interface. */
-            interface_display((*rp)->i, (*rp)->d, (*rp)->r);
+            /* Display the rover. */
+            display(*rp);
         }
     }
 }

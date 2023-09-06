@@ -31,6 +31,11 @@ void brushed_motor_init(brushed_motor* bmp, int duty_cycle_max, int en_pin,
 void brushed_motor_term(brushed_motor* bmp);
 
 /**
+ * This function returns the duty cycle of the brushed_motor provided to it. 
+ */
+int brushed_motor_get_duty_cycle(brushed_motor bm);
+
+/**
  * Alters the duty-cycle of the provided motor.
  */
 void brushed_motor_change_duty_cycle( brushed_motor* bmp, int delta );

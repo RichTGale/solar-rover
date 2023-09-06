@@ -61,6 +61,14 @@ void brushed_motor_term(brushed_motor* bmp)
 }
 
 /**
+ * This function returns the duty cycle of the brushed_motor provided to it. 
+ */
+int brushed_motor_get_duty_cycle(brushed_motor bm)
+{
+    return bm->duty_cycle;
+}
+
+/**
  * This function switches the flow of current through the motor connected to
  * the pins provided to the function so that it spins in a forward rotation.
  */

@@ -43,6 +43,18 @@ void drive_init(drive* dp);
 void drive_term(drive* dp);
 
 /**
+ * This function returns the duty cycle of the lmotor property of the 
+ * drive provided to the function.
+ */
+int drive_get_lmotor_duty_cycle(drive d);
+
+/**
+ * This function returns the duty cycle of the rmotor property of the 
+ * drive provided to the function.
+ */
+int drive_get_rmotor_duty_cycle(drive d);
+
+/**
  * This function updates the drive provided to it.
  */
 void drive_update(drive* dp, enum DriveCommand drive_command);
