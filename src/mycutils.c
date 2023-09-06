@@ -583,7 +583,9 @@ void move_cursor(enum directions direction, unsigned int n)
 }
 
 /**
- * This function prints the text file at the file path provided to it.
+ * This function prints the text file at the file path provided to it. It
+ * prints the text file in the colours and mode that are provided to
+ * the function.
  */
 void print_fs_mod(char* filepath, vec2d origin, enum termcolours colour, 
                                                 enum textmodes mode)
@@ -597,9 +599,9 @@ void print_fs_mod(char* filepath, vec2d origin, enum termcolours colour,
     /* Opening the file. */ 
     fs = openfs(filepath, "r");
 
-    /* Setting the text -mode and colour. */
-    text_fcol(colour);
+    /* Setting the text mode and foreground colour. */
     text_mode(mode);
+    text_fcol(colour);
 
     /* Reading the line from the file. */ 
     while (readfsl(fs, &line)) 
@@ -621,28 +623,41 @@ void print_fs_mod(char* filepath, vec2d origin, enum termcolours colour,
 }
 
 /**
- * This function prints the text file at the file path provided to it.
+ * This function prints the string provided to it at the position that is
+ * also provided to the function.
  */
-void print_str_mod(char* str, vec2d origin, enum termcolours colour, 
-                                                 enum textmodes mode);
-
-/**
- * This function prints the string provided to it into the the terminal
- * at the location specified by the vec2d that is also provided to the
- * function.
- */
-void print_str(char* str, vec2d origin)
+void print_str(char* str, vec2d pos)
 {
     char* cmd;  // The command
 
     /* Printing the string. */
-    put_cursor(origin.x, origin.y);
+    put_cursor(pos.x, pos.y);
     strfmt(&cmd, "printf \"%s\"", str);
     system(cmd);
 
     /* Cleaning up. */
     free(cmd);
 }
+
+/**
+ * This function prints the string provided to it at the position
+ * that is also provided. It prints the string in the colours and in the
+ * mode provided.
+ */
+void print_str_mod(char* str, vec2d pos, enum termcolours fcol,
+                                         enum textmodes mode)
+{
+    /* Setting the text mode and foreground colour. */
+    text_mode(mode);
+    text_fcol(fcol);
+
+    /* Printing the string. */
+    print_str(str, pos);
+
+    /* Reverting changes to the textcolours and mode. */
+    text_mode(NORMAL);
+}
+
 
 /**
  * This function places the terminal at the row and column numbers

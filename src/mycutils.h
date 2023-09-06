@@ -220,23 +220,26 @@ vec2d get_res();
 void move_cursor(enum directions direction, unsigned int n);
 
 /**
- * This function prints the text file at the file path provided to it.
+ * This function prints the text file at the file path provided to it. It
+ * prints the text file in the colours and mode that are provided to
+ * the function.
  */
 void print_fs_mod(char* filepath, vec2d origin, enum termcolours colour, 
-                                                     enum textmodes mode);
+                                                enum textmodes mode);
 
 /**
- * This function prints the string provided to it into the the terminal
- * at the location specified by the vec2d that is also provided to the
- * function.
+ * This function prints the string provided to it at the position that is
+ * also provided to the function.
  */
-void print_str(char* str, vec2d origin);
+void print_str(char* str, vec2d pos);
 
 /**
- * This function prints the text file at the file path provided to it.
+ * This function prints the string provided to it at the location
+ * that is also provided. It prints the string in the colours and in the
+ * mode provided.
  */
-void print_str_mod(char* str, vec2d origin, enum termcolours colour, 
-                                                 enum textmodes mode);
+void print_str_mod(char* str, vec2d origin, enum termcolours fcol,
+                                            enum textmodes mode);
 
 /**
  * This function places the terminal cursor at the row and column numbers
