@@ -19,6 +19,6 @@
 /**
  * Prints information about the Raspberry Pi this program is running on.
  */
-void print_rpi_info( rpi_info info );
+void print_rpi_info(rpi_info info, vec2d origin);
 
 #endif // RPIUTILS_H

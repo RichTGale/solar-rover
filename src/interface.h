@@ -5,7 +5,7 @@
  * for the interface type, as well as enumeration definitions for it.
  *
  * Version: 0.1.1
- * Author: Richard Gale
+ * Author(s): Richard Gale
  */
 
 #ifndef interface_h

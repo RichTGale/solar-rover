@@ -128,6 +128,9 @@ void rover_exec(rover* rp)
 
             /* Display the rover. */
             display(*rp);
+
+            /* Storing the time. */
+            start_timer(&end_last_frame);
         }
     }
 }

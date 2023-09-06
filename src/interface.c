@@ -223,17 +223,18 @@ void interface_update(interface* ip, enum InterfaceCommand interface_command)
  */
 void display_start_screen()
 {
-    rpi_info info;  /* Information about the raspberry pi. */
-    vec2d origin;   /* The cursor position. */
-    vec2d bounds;   /* The size of the terminal. */
-    char* message;  /* A message. */
-
-    /* Start with the cursor in the top left corner. */
-    origin.x = 1;
-    origin.y = 1;
+    const int TITLE_WIDTH = 45;     /* The width of the title. */
+    rpi_info info;                  /* Information about the raspberry pi. */
+    vec2d origin;                   /* The cursor position. */
+    vec2d bounds;                   /* The size of the terminal. */
+    char* message;                  /* A message. */
 
     /* Get the bounds of the terminal. */
     bounds = termres();
+    
+    /* Set the origin at the top and center. */
+    origin.x = bounds.x / 2 - TITLE_WIDTH / 2;
+    origin.y = 1;
 
     /* Create the message. */
     strfmt(&message, "'d': Drive | 'r': Rack | 'q': Quit");
@@ -245,15 +246,22 @@ void display_start_screen()
     /* Print information about the raspberry pi this program is running on. */
     cursput(origin.x, origin.y);
     get_rpi_info(&info);
-    print_rpi_info(info);
+    print_rpi_info(info, origin);
 
-    /* Printing the message. */
+    /* Setting the location of the message. */
     origin.x = bounds.x / 2 - (strlen(message) / 2);
     origin.y = bounds.y - 1;
+    if (bounds.y > 30)
+        origin.y -= 5;
+    
+    /* Printing the message. */
     textmode(BOLD);
     termprint(message, origin);
     textmode(NORMAL);
 
+    /* Place the cursor in the top, right hand corner. */
+    cursput(bounds.x, 0);
+    
     /* De-allocating memory. */
     free(message);
 }
@@ -331,14 +339,21 @@ void display_drive_screen(drive d)
     /* Create the control instructions. */
     strfmt(&controls, 
             "'w': Accelerate | 'a': Left | 's': Decelerate | 'd': Right | "
-            "'q': Start Screen");
+            "'x': Stop | 'q': Start Screen");
 
     /* Set the control instruction location. */
     controls_location.x = bounds.x / 2 - strlen(controls) / 2;
     controls_location.y = bounds.y - 1;
+    if (bounds.y > 30)
+        controls_location.y -= 5;
 
     /* Print the control instructions. */
+    textmode(BOLD);
     termprint(controls, controls_location);
+    textmode(NORMAL);
+
+    /* Place the cursor in the top, right hand corner. */
+    cursput(bounds.x, 0);
 
     /* De-allocating memory. */
     free(title);

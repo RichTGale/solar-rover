@@ -13,17 +13,17 @@
 /**
  * Prints information about the Raspberry Pi this program is running on.
  */
-void print_rpi_info( rpi_info info )
+void print_rpi_info(rpi_info info, vec2d origin)
 {
+    cursput(origin.x, origin.y);
     curscolf( MAGENTA );
     textmode( UNDERLINE );
     fprintf( stdout, "Raspberry Pi information:\n" );
-    textmode( NORMAL );
-
-    // Removes the underline on the current line
-    termclearfb();
+    textmode( NORMAL); 
 
     // Printing P1Revision
+    origin.y++;
+    cursput(origin.x, origin.y);
     fprintf( stdout, " - p1_revision: " );
     switch ( info.p1_revision )
     {
@@ -44,17 +44,27 @@ void print_rpi_info( rpi_info info )
     fprintf( stdout, "\n" );
 
     // Printing revision
+    origin.y++;
+    cursput(origin.x, origin.y);
     fprintf( stdout, " - Revision: %s\n", info.revision );
     
     // Printing type
+    origin.y++;
+    cursput(origin.x, origin.y);
     fprintf( stdout, " - Type: %s\n", info.type );
     
     // Printing amount of ram
+    origin.y++;
+    cursput(origin.x, origin.y);
     fprintf( stdout, " - Ram: %s\n", info.ram );
     
     // Printing manufacturer
+    origin.y++;
+    cursput(origin.x, origin.y);
     fprintf( stdout, " - Manufacturer: %s\n", info.manufacturer );
     
     // Printing processor
+    origin.y++;
+    cursput(origin.x, origin.y);
     fprintf( stdout, " - Processor: %s\n", info.processor );
 }
