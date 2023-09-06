@@ -31,6 +31,17 @@ void interface_init(interface* ip)
     (*ip)->start_screen_on = true;
     (*ip)->drive_screen_on = false;
     (*ip)->rack_screen_on = false;
+
+    /* Check if terminal is large enough to display interface. */
+    if ((termres()).x < 100 || (termres()).y < 25)
+    {
+        /* The terminal window is not large enough so print an error
+         * message and exit the program. */
+        fprintf(stdout, "The interface failed to initialise because"
+                        " the terminal window is not large enough."
+                        " It needs to have a minimum size of 100x25.\n");
+        exit(EXIT_FAILURE);
+    }
 }
 
 /**
@@ -231,7 +242,7 @@ void display_start_screen()
 
     /* Get the bounds of the terminal. */
     bounds = termres();
-    
+
     /* Set the origin at the top and center. */
     origin.x = bounds.x / 2 - TITLE_WIDTH / 2;
     origin.y = 1;
@@ -253,7 +264,7 @@ void display_start_screen()
     origin.y = bounds.y - 1;
     if (bounds.y > 30)
         origin.y = 30;
-    
+
     /* Printing the message. */
     textmode(BOLD);
     termprint(message, origin);
@@ -261,7 +272,7 @@ void display_start_screen()
 
     /* Place the cursor in the top, right hand corner. */
     cursput(bounds.x, 0);
-    
+
     /* De-allocating memory. */
     free(message);
 }
@@ -318,7 +329,7 @@ void display_drive_screen(drive d)
     vec2d controls_location;    /* The location of the control instructions. */
     char* title;                /* The name of the screen. */
     char* controls;             /* The control instructions. */
-    
+
     /* Get the size of the terminal. */
     bounds = termres();
 
@@ -331,7 +342,7 @@ void display_drive_screen(drive d)
     /* Set the location of the drive bars. */
     lmotor_location = (vec2d) { bounds.x / 4, 10 };
     rmotor_location = (vec2d) { bounds.x / 4 * 3, 10 };
-    
+
     /* Display the drive bars. */ 
     display_drive_bar("Motor 1", drive_get_lmotor_duty_cycle(d), lmotor_location);
     display_drive_bar("Motor 2", drive_get_rmotor_duty_cycle(d), rmotor_location);
