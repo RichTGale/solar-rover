@@ -241,14 +241,16 @@ void display_drive_bar(char* label, int duty_cycle, vec2d location )
  
     /* Create the bar. */
     strfmt(&bar, "     ");
-
-    /* Display the label. */
-    label_location = (vec2d) { location.x - strlen(label) - 1, location.y };
-    termprint(label, label_location);
-
+    
     /* Set the location of the bar outline and display it. */
-    outline_location = (vec2d) { location.x - 1, location.y - 5 };
+    outline_location.x = location.x - strlen(bar) / 2;
+    outline_location.y = location.y - 5;
     termprintfs("../../art/drive_bar.txt", &outline_location, WHITE, NORMAL);
+
+    /* Set the location of the label and display it. */
+    label_location.x = location.x - strlen(label) - strlen(bar) - 1;
+    label_location.y = location.y; 
+    termprint(label, label_location);
 
     /* Set the bar colour to red. */ 
     curscolb(RED);
@@ -257,12 +259,12 @@ void display_drive_bar(char* label, int duty_cycle, vec2d location )
     for (int i = 0; i < abs(duty_cycle) / 25; i++)
     {
         if (duty_cycle > 0 )
-            termprint(bar, (vec2d) { location.x, location.y - 1 - i } );
+            termprint(bar, (vec2d) { outline_location.x + 1, location.y - 1 - i });
         else if (duty_cycle < 0)
-            termprint(bar, (vec2d) { location.x, location.y + 1 + i } );
+            termprint(bar, (vec2d) { outline_location.x + 1, location.y + 1 + i });
     }
 
-    /* Revert text changes. */
+    /* Revert text colour changes. */
     textmode(NORMAL);
 
     /* De-allocating memory. */
@@ -288,7 +290,7 @@ void display_drive_screen(drive d)
     strfmt(&title, "Drive Screen");
 
     /* Display the screen title. */
-    termprint(title, (vec2d) { bounds.x / 2 - strlen(title), 1 });
+    termprint(title, (vec2d) { bounds.x / 2 - strlen(title) / 2, 1 });
 
     /* Set the location of the drive bars. */
     lmotor_location = (vec2d) { bounds.x / 4, 10 };
