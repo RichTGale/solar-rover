@@ -252,7 +252,7 @@ void display_start_screen()
     origin.x = bounds.x / 2 - (strlen(message) / 2);
     origin.y = bounds.y - 1;
     if (bounds.y > 30)
-        origin.y -= 5;
+        origin.y = 30;
     
     /* Printing the message. */
     textmode(BOLD);
@@ -345,7 +345,7 @@ void display_drive_screen(drive d)
     controls_location.x = bounds.x / 2 - strlen(controls) / 2;
     controls_location.y = bounds.y - 1;
     if (bounds.y > 30)
-        controls_location.y -= 5;
+        controls_location.y = 30;
 
     /* Print the control instructions. */
     textmode(BOLD);
