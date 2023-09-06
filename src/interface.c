@@ -345,7 +345,7 @@ void display_drive_bar(char* label, int duty_cycle, vec2d pos )
     label_pos.y = pos.y; 
     print_str_mod(label, label_pos, WHITE, NORMAL);
 
-    /* Set the bar colour to red. */ 
+    /* Set the bar colour. */ 
     text_bcol(YELLOW);
 
     /* Display the bar. */
