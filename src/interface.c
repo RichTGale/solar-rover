@@ -17,6 +17,8 @@ struct interface_data {
     bool start_screen_on;   /* Whether the start screen is on. */
     bool drive_screen_on;   /* Whether the drive screen is on. */
     bool rack_screen_on;    /* Whether the rack screen is on. */
+    int min_width;          /* The minimum width of the interface. */
+    int min_height;         /* The minimum height of the interface. */
 };
 
 /**
@@ -32,14 +34,19 @@ void interface_init(interface* ip)
     (*ip)->drive_screen_on = false;
     (*ip)->rack_screen_on = false;
 
-    /* Check if terminal is large enough to display interface. */
-    if ((termres()).x < 100 || (termres()).y < 25)
+    /* Set the minimum width and height of the interface. */
+    (*ip)->min_width = 100;
+    (*ip)->min_height = 25;
+
+
+    /* Check if terminal is large enough to display the interface. */
+    if ((termres()).x < (*ip)->min_width || (termres()).y < (*ip)->min_height)
     {
         /* The terminal window is not large enough so print an error
          * message and exit the program. */
-        fprintf(stdout, "The interface failed to initialise because"
-                        " the terminal window is not large enough."
-                        " It needs to have a minimum size of 100x25.\n");
+        fprintf(stdout, "The interface failed to initialise because "
+                        "the terminal window is not large enough. "
+                        "It needs to have a minimum size of 100x25.\n");
         exit(EXIT_FAILURE);
     }
 }
@@ -232,49 +239,55 @@ void interface_update(interface* ip, enum InterfaceCommand interface_command)
 /**
  * This function displays the start screen.
  */
-void display_start_screen()
+void display_start_screen(interface i)
 {
     const int TITLE_WIDTH = 45;     /* The width of the title. */
+    const int TITLE_HEIGHT = 16;    /* The height of the title. */
     rpi_info info;                  /* Information about the raspberry pi. */
-    vec2d origin;                   /* The cursor position. */
-    vec2d bounds;                   /* The size of the terminal. */
-    char* message;                  /* A message. */
+    vec2d title_pos;                /* The position of the program title. */
+    vec2d info_pos;                 /* The position of the rpi information. */
+    vec2d controls_pos;             /* The position of the control instructions. */
+    vec2d term_res;                 /* The resolution of the terminal. */
+    char* controls;                 /* The control instructions. */
 
     /* Get the bounds of the terminal. */
-    bounds = termres();
+    term_res = termres();
 
-    /* Set the origin at the top and center. */
-    origin.x = bounds.x / 2 - TITLE_WIDTH / 2;
-    origin.y = 1;
-
-    /* Create the message. */
-    strfmt(&message, "'d': Drive | 'r': Rack | 'q': Quit");
+    /* Set the position of the title. */
+    title_pos.x = term_res.x / 2 - TITLE_WIDTH / 2;
+    title_pos.y = 1;
 
     /* Draw the program title. */
     textmode(NORMAL);
-    termprintfs("../../art/title.txt", &origin, WHITE, NORMAL);
+    termprintfs("../../art/title.txt", title_pos, WHITE, NORMAL);
+
+    /* Set the position of the rpi info. */
+    info_pos.x = title_pos.x;
+    info_pos.y = TITLE_HEIGHT + 1;
 
     /* Print information about the raspberry pi this program is running on. */
-    cursput(origin.x, origin.y);
     get_rpi_info(&info);
-    print_rpi_info(info, origin);
+    print_rpi_info(info, info_pos);
 
-    /* Setting the location of the message. */
-    origin.x = bounds.x / 2 - (strlen(message) / 2);
-    origin.y = bounds.y - 1;
-    if (bounds.y > 30)
-        origin.y = 30;
+    /* Create the control instructions. */
+    strfmt(&controls, "'d': Drive | 'r': Rack | 'q': Quit");
+
+    /* Set the location of the control instructions. */
+    controls_pos.x = term_res.x / 2 - strlen(controls) / 2;
+    controls_pos.y = term_res.y - 1;
+    if (term_res.y > i->min_height + 1)
+        controls_pos.y = i->min_height + 1;
 
     /* Printing the message. */
     textmode(BOLD);
-    termprint(message, origin);
+    termprint(controls, controls_pos);
     textmode(NORMAL);
 
     /* Place the cursor in the top, right hand corner. */
-    cursput(bounds.x, 0);
+    cursput(term_res.x, 0);
 
     /* De-allocating memory. */
-    free(message);
+    free(controls);
 }
 
 /** 
@@ -292,7 +305,7 @@ void display_drive_bar(char* label, int duty_cycle, vec2d location )
     /* Set the location of the bar outline and display it. */
     outline_location.x = location.x - strlen(bar) / 2;
     outline_location.y = location.y - 5;
-    termprintfs("../../art/drive_bar.txt", &outline_location, WHITE, NORMAL);
+    termprintfs("../../art/drive_bar.txt", outline_location, WHITE, NORMAL);
 
     /* Set the location of the label and display it. */
     label_location.x = location.x - strlen(label) - strlen(bar) - 1;
@@ -321,7 +334,7 @@ void display_drive_bar(char* label, int duty_cycle, vec2d location )
 /**
  * This function displays the drive screen.
  */
-void display_drive_screen(drive d)
+void display_drive_screen(interface i, drive d)
 {
     vec2d bounds;               /* The size of the terminal. */
     vec2d lmotor_location;      /* The location of the left motor bar. */
@@ -355,8 +368,8 @@ void display_drive_screen(drive d)
     /* Set the control instruction location. */
     controls_location.x = bounds.x / 2 - strlen(controls) / 2;
     controls_location.y = bounds.y - 1;
-    if (bounds.y > 30)
-        controls_location.y = 30;
+    if (bounds.y > i->min_height + 1)
+        controls_location.y = i->min_height + 1;
 
     /* Print the control instructions. */
     textmode(BOLD);
@@ -388,8 +401,8 @@ void interface_display(interface i, drive d, rack r)
     termclear();
 
     /* Check which screen to display and display it. */
-    if (i->start_screen_on) display_start_screen();
-    else if (i->drive_screen_on) display_drive_screen(d);
+    if (i->start_screen_on) display_start_screen(i);
+    else if (i->drive_screen_on) display_drive_screen(i, d);
     else if (i->rack_screen_on) display_rack_screen();
 }
 

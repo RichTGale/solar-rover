@@ -741,8 +741,11 @@ void termprint(char* str, vec2d origin)
     free(cmd);
 }
 
-void termprintfs(char* filepath, vec2d* origin, enum termcolours colour, 
-                                                enum textmodes mode)
+/**
+ * This function prints the text file at the file path provided to it.
+ */
+void termprintfs(char* filepath, vec2d origin, enum termcolours colour, 
+                                               enum textmodes mode)
 {
     FILE* fs;   /* Pointer to the file stream. */
     char* line; /* The text in the file. */
@@ -761,10 +764,10 @@ void termprintfs(char* filepath, vec2d* origin, enum termcolours colour,
     while (readfsl(fs, &line)) 
     {
         /* Drawing the line. */
-        termprint(line, *origin);
+        termprint(line, origin);
 
         /* Getting ready to draw the next line. */
-        (*origin).y++;
+        origin.y++;
         free(line);
         line = NULL;
     }

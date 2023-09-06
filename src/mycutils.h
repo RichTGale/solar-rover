@@ -253,8 +253,11 @@ void termdraws(char* str, vec2d origin, vec2d bounds);
  */
 void termprint(char* str, vec2d origin);
 
-void termprintfs(char* filepath, vec2d* origin, enum termcolours colour, 
-                                                enum textmodes mode);
+/**
+ * This function prints the text file at the file path provided to it.
+ */
+void termprintfs(char* filepath, vec2d origin, enum termcolours colour, 
+                                               enum textmodes mode);
 
 /**
  * This function returns the number of rows and columns of the terminal.
