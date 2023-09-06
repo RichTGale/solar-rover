@@ -300,7 +300,7 @@ void display_drive_screen(drive d)
 
     /* Create the control instructions. */
     strfmt(&controls, 
-            "'w': Accelerate | 'a': Left | 's': Decelerate | 'd': Right |"
+            "'w': Accelerate | 'a': Left | 's': Decelerate | 'd': Right | "
             "'q': Start Screen");
 
     /* Set the control instruction location. */
