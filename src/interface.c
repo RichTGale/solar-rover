@@ -4,7 +4,7 @@
  * This file contains the internal data-structure and function definitions
  * for the interface type.
  *
- * Version: 0.1.0
+ * Version: 0.1.1
  * Author(s): Richard Gale
  */
 
@@ -43,118 +43,146 @@ void interface_term(interface* ip)
 }
 
 /**
- * This function returns commands based on user input.
+ * This function gets input from the user and returns it.
  */
-commands interface_input_command(interface* ip)
+char interface_get_user_in()
 {
-    commands cmds;  /* The commands we will return. */
-    char user_in;   /* The user input. */
+    return scanc_nowait();
+}
 
+/**
+ * This function builds a set of commands associated with the start screen.
+ */
+void build_start_commands(commands* cmdsp, char user_in)
+{
+    /* Check what the user input. */
+    switch (user_in)
+    {
+        /* Terminate the app. */
+	    case 'q' :
+            (*cmdsp).interface_command = TERMINATE;
+            break;
+
+        /* Show the drive screen. */
+        case 'd'  :
+            (*cmdsp).interface_command = DRIVE_SCREEN_ON;
+            break;
+
+        /* Show the rack screen. */
+        case 'r'  :
+           (*cmdsp).interface_command = RACK_SCREEN_ON;
+            break;
+    }
+}
+
+/**
+ * This function builds a set of commands associated with the drive screen.
+ */
+void build_drive_commands(commands* cmdsp, char user_in)
+{
+    /* Checking what the user input. */
+    switch (user_in)
+    {
+        /* Accelerate the rover. */
+        case 'w' :
+            (*cmdsp).drive_command = ACCELERATE; 
+            break;
+
+        /* Turn the rover left. */
+        case 'a' :
+            (*cmdsp).drive_command = TURN_LEFT;
+            break;
+
+        /* Decellerate the rover. */
+        case 's' :
+            (*cmdsp).drive_command = DECELERATE;
+            break;
+
+        /* Turn the rover right. */
+        case 'd' :
+            (*cmdsp).drive_command = TURN_RIGHT;
+            break;
+
+        /* Stop the rover. */
+        case 'x' :
+            (*cmdsp).drive_command = STOP_DRIVE;
+            break;
+
+        /* Turn on the start screen. */
+        case 'q' :
+            (*cmdsp).interface_command = START_SCREEN_ON;
+            (*cmdsp).drive_command = STOP_DRIVE;
+            break;
+    }
+}
+
+/**
+ * This function builds a set of commands associated with the rack screen.
+ */
+void build_rack_commands(commands* cmdsp, char user_in)
+{
+    /* Checking what the user input. */
+    switch (user_in)
+    {
+        /* Rotate the rack clockwise on its x axis. */
+        case 'w' :
+            (*cmdsp).rack_command = X_CLOCKWISE; 
+            break;
+
+        /* Rotate the rack anticlockwise on its z axis. */
+        case 'a' :
+            (*cmdsp).rack_command = Z_ANTICLOCKWISE;
+            break;
+
+        /* Rotate the rack anticlockwise on its x axis. */
+        case 's' :
+            (*cmdsp).rack_command = X_ANTICLOCKWISE;
+            break;
+
+        /* Rotate the rack clockwise on its z axis. */
+        case 'd' :
+            (*cmdsp).rack_command = Z_CLOCKWISE;
+            break;
+
+        /* Turn on the start screen. */
+        case 'q' :
+            (*cmdsp).interface_command = START_SCREEN_ON;
+            break;
+    }
+}
+
+/**
+ * This function builds a set of commands based on user input and the
+ * current screen that is on.
+ */
+void interface_build_commands(interface* ip, commands* cmdsp, char user_in)
+{
     /* Initialise commands. */
-    cmds = (commands) {
+    *cmdsp = (commands) {
         .interface_command = NO_INTERFACE_COMMAND,
         .drive_command = NO_DRIVE_COMMAND,
         .rack_command = NO_RACK_COMMAND
     };
 
-    /* Get user input. */
-    user_in = scanc_nowait();
-
     /* Check if the start-screen is on. */
     if ((*ip)->start_screen_on)
     {
-        /* Check what the user input. */
-        switch (user_in)
-        {
-            /* Terminate the app. */
-	        case 'q' :
-                cmds.interface_command = TERMINATE;
-                break;
-
-            /* Show the drive screen. */
-            case 'd'  :
-                cmds.interface_command = DRIVE_SCREEN_ON;
-                break;
-            
-            /* Show the rack screen. */
-            case 'r'  :
-                cmds.interface_command = RACK_SCREEN_ON;
-                break;
-        }
+        /* Store start screen commands. */
+        build_start_commands(cmdsp, user_in);
     }
 
     /* Checking if the drive screen is on. */
     else if ((*ip)->drive_screen_on)
     {
-        /* Checking what the user input. */
-        switch (user_in)
-        {
-            /* Accelerate the rover. */
-            case 'w' :
-                cmds.drive_command = ACCELERATE; 
-                break;
-
-            /* Turn the rover left. */
-            case 'a' :
-                cmds.drive_command = TURN_LEFT;
-                break;
-
-            /* Decellerate the rover. */
-            case 's' :
-                cmds.drive_command = DECELERATE;
-                break;
-
-            /* Turn the rover right. */
-            case 'd' :
-                cmds.drive_command = TURN_RIGHT;
-                break;
-
-            /* Stop the rover. */
-            case 'x' :
-                cmds.drive_command = STOP_DRIVE;
-                break;
-            
-            /* Turn on the start screen. */
-            case 'q' :
-                cmds.interface_command = START_SCREEN_ON;
-                cmds.drive_command = STOP_DRIVE;
-                break;
-        }
+        /* Store drive screen command. */
+        build_drive_commands(cmdsp, user_in);
     }
 
     /* Checking if the rack screen is on. */
     else if ((*ip)->rack_screen_on)
     {
-        /* Checking what the user input. */
-        switch (user_in)
-        {
-            /* Rotate the rack clockwise on its x axis. */
-            case 'w' :
-                cmds.rack_command = X_CLOCKWISE; 
-                break;
-
-            /* Rotate the rack anticlockwise on its z axis. */
-            case 'a' :
-                cmds.rack_command = Z_ANTICLOCKWISE;
-                break;
-
-            /* Rotate the rack anticlockwise on its x axis. */
-            case 's' :
-                cmds.rack_command = X_ANTICLOCKWISE;
-                break;
-
-            /* Rotate the rack clockwise on its z axis. */
-            case 'd' :
-                cmds.rack_command = Z_CLOCKWISE;
-                break;
-
-            /* Turn on the start screen. */
-            case 'q' :
-                cmds.interface_command = START_SCREEN_ON;
-                break;
-        }
+        build_rack_commands(cmdsp, user_in);
     }
-    return cmds;
 }
 
 /**

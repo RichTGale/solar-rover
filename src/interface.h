@@ -4,7 +4,7 @@
  * This file contains the public data-structure and function prototype declarations
  * for the interface type, as well as enumeration definitions for it.
  *
- * Version: 0.1.0
+ * Version: 0.1.1
  * Author: Richard Gale
  */
 
@@ -57,9 +57,15 @@ void interface_init(interface* ip);
 void interface_term(interface* ip);
 
 /**
- * This function creates and returns a commands based on user input.
+ * This function gets input from the user and returns it.
  */
-commands interface_input_command(interface* ip);
+char interface_get_user_in();
+
+/**
+ * This function builds a set of commands based on user input and the
+ * current screen that is on.
+ */
+void interface_build_commands(interface* ip, commands* cmdsp, char user_in);
 
 /**
  * This function updates the interface.

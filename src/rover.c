@@ -4,7 +4,7 @@
  * This file contains the internal data-structure and function definitions
  * for the rover type.
  *
- * Version: 0.1.0
+ * Version: 0.1.1
  * Author: Richard Gale
  */
 
@@ -61,12 +61,19 @@ void rover_term(rover* rp)
     free(*rp);
 }
 
+/**
+ * This function updates the rover.
+ */
 void update(rover* rp)
 {
     commands cmds;  /* Commands for the rover to execute. */
+    char user_in;   /* The user input. */
     
-    /* Get commands from user input. */
-    cmds = interface_input_command(&(*rp)->i);
+    /* Get user input. */
+    user_in = interface_get_user_in();
+    
+    /* Build a set of commands. */
+    interface_build_commands(&(*rp)->i, &cmds, user_in);
 
     /* Update the interface. */
     fprintf(stdout, " - Updating the interface...\n");
