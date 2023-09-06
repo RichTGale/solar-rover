@@ -15,15 +15,15 @@
  */
 void print_rpi_info(rpi_info info, vec2d origin)
 {
-    cursput(origin.x, origin.y);
-    curscolf( MAGENTA );
-    textmode( UNDERLINE );
+    put_cursor(origin.x, origin.y);
+    text_fcol( MAGENTA );
+    text_mode( UNDERLINE );
     fprintf( stdout, "Raspberry Pi information:\n" );
-    textmode( NORMAL); 
+    text_mode( NORMAL); 
 
     // Printing P1Revision
     origin.y++;
-    cursput(origin.x, origin.y);
+    put_cursor(origin.x, origin.y);
     fprintf( stdout, " - p1_revision: " );
     switch ( info.p1_revision )
     {
@@ -45,26 +45,26 @@ void print_rpi_info(rpi_info info, vec2d origin)
 
     // Printing revision
     origin.y++;
-    cursput(origin.x, origin.y);
+    put_cursor(origin.x, origin.y);
     fprintf( stdout, " - Revision: %s\n", info.revision );
     
     // Printing type
     origin.y++;
-    cursput(origin.x, origin.y);
+    put_cursor(origin.x, origin.y);
     fprintf( stdout, " - Type: %s\n", info.type );
     
     // Printing amount of ram
     origin.y++;
-    cursput(origin.x, origin.y);
+    put_cursor(origin.x, origin.y);
     fprintf( stdout, " - Ram: %s\n", info.ram );
     
     // Printing manufacturer
     origin.y++;
-    cursput(origin.x, origin.y);
+    put_cursor(origin.x, origin.y);
     fprintf( stdout, " - Manufacturer: %s\n", info.manufacturer );
     
     // Printing processor
     origin.y++;
-    cursput(origin.x, origin.y);
+    put_cursor(origin.x, origin.y);
     fprintf( stdout, " - Processor: %s\n", info.processor );
 }

@@ -40,7 +40,7 @@ void interface_init(interface* ip)
 
 
     /* Check if terminal is large enough to display the interface. */
-    if ((termres()).x < (*ip)->min_width || (termres()).y < (*ip)->min_height)
+    if ((get_res()).x < (*ip)->min_width || (get_res()).y < (*ip)->min_height)
     {
         /* The terminal window is not large enough so print an error
          * message and exit the program. */
@@ -251,15 +251,15 @@ void display_start_screen(interface i)
     char* controls;                 /* The control instructions. */
 
     /* Get the bounds of the terminal. */
-    term_res = termres();
+    term_res = get_res();
 
     /* Set the position of the title. */
     title_pos.x = term_res.x / 2 - TITLE_WIDTH / 2;
     title_pos.y = 1;
 
     /* Draw the program title. */
-    textmode(NORMAL);
-    termprintfs("../../art/title.txt", title_pos, WHITE, NORMAL);
+    text_mode(NORMAL);
+    print_fs_mod("../../art/title.txt", title_pos, WHITE, NORMAL);
 
     /* Set the position of the rpi info. */
     info_pos.x = title_pos.x;
@@ -279,12 +279,12 @@ void display_start_screen(interface i)
         controls_pos.y = i->min_height + 1;
 
     /* Printing the message. */
-    textmode(BOLD);
-    termprint(controls, controls_pos);
-    textmode(NORMAL);
+    text_mode(BOLD);
+    print_str(controls, controls_pos);
+    text_mode(NORMAL);
 
     /* Place the cursor in the top, right hand corner. */
-    cursput(term_res.x, 0);
+    put_cursor(term_res.x, 0);
 
     /* De-allocating memory. */
     free(controls);
@@ -305,27 +305,27 @@ void display_drive_bar(char* label, int duty_cycle, vec2d location )
     /* Set the location of the bar outline and display it. */
     outline_location.x = location.x - strlen(bar) / 2;
     outline_location.y = location.y - 5;
-    termprintfs("../../art/drive_bar.txt", outline_location, WHITE, NORMAL);
+    print_fs_mod("../../art/drive_bar.txt", outline_location, WHITE, NORMAL);
 
     /* Set the location of the label and display it. */
     label_location.x = location.x - strlen(label) - strlen(bar) - 1;
     label_location.y = location.y; 
-    termprint(label, label_location);
+    print_str(label, label_location);
 
     /* Set the bar colour to red. */ 
-    curscolb(RED);
+    text_bcol(RED);
 
     /* Display the bar. */
     for (int i = 0; i < abs(duty_cycle) / 25; i++)
     {
         if (duty_cycle > 0 )
-            termprint(bar, (vec2d) { outline_location.x + 1, location.y - 1 - i });
+            print_str(bar, (vec2d) { outline_location.x + 1, location.y - 1 - i });
         else if (duty_cycle < 0)
-            termprint(bar, (vec2d) { outline_location.x + 1, location.y + 1 + i });
+            print_str(bar, (vec2d) { outline_location.x + 1, location.y + 1 + i });
     }
 
     /* Revert text colour changes. */
-    textmode(NORMAL);
+    text_mode(NORMAL);
 
     /* De-allocating memory. */
     free(bar);
@@ -344,13 +344,13 @@ void display_drive_screen(interface i, drive d)
     char* controls;             /* The control instructions. */
 
     /* Get the size of the terminal. */
-    bounds = termres();
+    bounds = get_res();
 
     /* Create the screen title. */
     strfmt(&title, "Drive Screen");
 
     /* Display the screen title. */
-    termprint(title, (vec2d) { bounds.x / 2 - strlen(title) / 2, 1 });
+    print_str(title, (vec2d) { bounds.x / 2 - strlen(title) / 2, 1 });
 
     /* Set the location of the drive bars. */
     lmotor_location = (vec2d) { bounds.x / 4, 10 };
@@ -372,12 +372,12 @@ void display_drive_screen(interface i, drive d)
         controls_location.y = i->min_height + 1;
 
     /* Print the control instructions. */
-    textmode(BOLD);
-    termprint(controls, controls_location);
-    textmode(NORMAL);
+    text_mode(BOLD);
+    print_str(controls, controls_location);
+    text_mode(NORMAL);
 
     /* Place the cursor in the top, right hand corner. */
-    cursput(bounds.x, 0);
+    put_cursor(bounds.x, 0);
 
     /* De-allocating memory. */
     free(title);
@@ -398,7 +398,7 @@ void display_rack_screen()
 void interface_display(interface i, drive d, rack r)
 {
     /* Clear the terminal. */
-    termclear();
+    clear();
 
     /* Check which screen to display and display it. */
     if (i->start_screen_on) display_start_screen(i);
