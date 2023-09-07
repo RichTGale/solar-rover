@@ -4,7 +4,7 @@
  * This file contains the public data-structure and function prototype declarations
  * for the rack type, as well as enumeration definitions for it.
  *
- * Version: 0.1.0
+ * Version: 0.1.1
  * Author(s): Richard Gale
  */
 
@@ -45,16 +45,6 @@ void rack_init(rack* rp);
  * This function terminates the rack provided to it.
  */
 void rack_term(rack* rp);
-
-///**
-// * This function rotates the rack provided to it by one degree on its z axis.
-// */
-//void rack_rotate_z_1degree(rack* rp, enum RotationDirection direction);
-//
-///**
-// * This function rotates the rack provided to by one degree it on its x axis.
-// */
-//void rack_rotate_x_1degree(rack* rp, enum RotationDirection direction );
 
 /**
  * This function updates the rack provided to it.

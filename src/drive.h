@@ -4,7 +4,7 @@
  * This file contains the public data-structure and function prototype
  * declarations for the drive type, as well as enumeration definitions for it.
  *
- * Version: 0.1.0
+ * Version: 1.0.0
  * Author(s): Richard Gale
  */
 

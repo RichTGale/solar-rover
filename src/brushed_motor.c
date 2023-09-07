@@ -4,7 +4,7 @@
  * This file contains the internal data-structure and function definitions
  * for the brushed_motor type.
  *
- * Version: 0.1.0
+ * Version: 1.0.0
  * Author(s): Richard Gale
  */
 
