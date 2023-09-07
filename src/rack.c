@@ -4,7 +4,7 @@
  * This file contains the internal data-structure and function definitions
  * for the rack type.
  *
- * Version: 0.1.0
+ * Version: 0.1.1
  * Author(s): Richard Gale
  */
 #include "rack.h"
