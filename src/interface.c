@@ -14,6 +14,7 @@
  * This is the internal data of the interface type.
  */
 struct interface_data {
+    vec2d term_res;         /* The resolution of the terminal. */
     bool start_screen_on;   /* Whether the start screen is on. */
     bool drive_screen_on;   /* Whether the drive screen is on. */
     bool rack_screen_on;    /* Whether the rack screen is on. */
@@ -38,9 +39,12 @@ void interface_init(interface* ip)
     (*ip)->min_width = 100;
     (*ip)->min_height = 25;
 
+    /* Initialise the terminal resolution. */
+    (*ip)->term_res = get_res();
 
     /* Check if terminal is large enough to display the interface. */
-    if ((get_res()).x < (*ip)->min_width || (get_res()).y < (*ip)->min_height)
+    if ((*ip)->term_res.x < (*ip)->min_width
+            || (*ip)->term_res.y < (*ip)->min_height)
     {
         /* The terminal window is not large enough so print an error
          * message and exit the program. */
@@ -208,6 +212,9 @@ void interface_build_commands(interface* ip, commands* cmdsp, char user_in)
  */
 void interface_update(interface* ip, enum InterfaceCommand interface_command)
 {
+    /* Update the resolution of the terminal. */
+    (*ip)->term_res = get_res();
+
     switch (interface_command)
     {
         case TERMINATE :
@@ -240,12 +247,12 @@ void interface_update(interface* ip, enum InterfaceCommand interface_command)
  * This function displays the string provided to it at the top and center
  * of the terminal.
  */
-void display_screen_title_str(char* title)
+void display_screen_title_str(interface i, char* title)
 {
     vec2d pos;  /* The position of the title. */
 
     /* Set the position of the title. */
-    pos.x = (get_res()).x / 2 - strlen(title) / 2;
+    pos.x = i->term_res.x / 2 - strlen(title) / 2;
     pos.y = 1;
 
     /* Display the title. */
@@ -258,14 +265,11 @@ void display_screen_title_str(char* title)
 void display_controls(interface i, char* controls)
 {
     vec2d pos;      /* The position of the control instructions. */
-    vec2d term_res; /* The size of the terminal. */
-
-    term_res = get_res();
 
     /* Set the control instruction location. */
-    pos.x = term_res.x / 2 - strlen(controls) / 2;
-    pos.y = term_res.y - 1;
-    if (term_res.y > i->min_height + 1)
+    pos.x = i->term_res.x / 2 - strlen(controls) / 2;
+    pos.y = i->term_res.y - 1;
+    if (i->term_res.y > i->min_height + 1)
         pos.y = i->min_height + 1;
 
     /* Print the control instructions. */
@@ -283,14 +287,10 @@ void display_start_screen(interface i)
     vec2d title_pos;                /* The position of the program title. */
     vec2d info_pos;                 /* The position of the rpi information. */
     vec2d controls_pos;             /* The position of the control instructions. */
-    vec2d term_res;                 /* The resolution of the terminal. */
     char* controls;                 /* The control instructions. */
 
-    /* Get the bounds of the terminal. */
-    term_res = get_res();
-
     /* Set the position of the title. */
-    title_pos.x = term_res.x / 2 - TITLE_WIDTH / 2;
+    title_pos.x = i->term_res.x / 2 - TITLE_WIDTH / 2;
     title_pos.y = 1;
 
     /* Draw the program title. */
@@ -308,16 +308,16 @@ void display_start_screen(interface i)
     strfmt(&controls, "'d': Drive | 'r': Rack | 'q': Quit");
 
     /* Set the location of the control instructions. */
-    controls_pos.x = term_res.x / 2 - strlen(controls) / 2;
-    controls_pos.y = term_res.y - 1;
-    if (term_res.y > i->min_height + 1)
+    controls_pos.x = i->term_res.x / 2 - strlen(controls) / 2;
+    controls_pos.y = i->term_res.y - 1;
+    if (i->term_res.y > i->min_height + 1)
         controls_pos.y = i->min_height + 1;
 
     /* Printing the message. */
     print_str_mod(controls, controls_pos, WHITE, BOLD);
 
     /* Place the cursor in the top, right hand corner. */
-    put_cursor(term_res.x, 0);
+    put_cursor(i->term_res.x, 0);
 
     /* De-allocating memory. */
     free(controls);
@@ -330,6 +330,7 @@ void display_drive_bar(char* label, int duty_cycle, vec2d pos )
 {
     vec2d label_pos;    /* The position of the bar's label. */
     vec2d outline_pos;  /* The position of the bar's outline. */
+    vec2d bar_pos;      /* The position of the bar. */
     char* bar;          /* The bar. */
  
     /* Create the bar. */
@@ -345,19 +346,29 @@ void display_drive_bar(char* label, int duty_cycle, vec2d pos )
     label_pos.y = pos.y; 
     print_str_mod(label, label_pos, WHITE, NORMAL);
 
-    /* Set the bar colour. */ 
+    /* Set the background colour. */
     text_bcol(YELLOW);
 
-    /* Display the bar. */
+    /* Set the location of the bar and display it. */
+    bar_pos.x = outline_pos.x + 1;
     for (int i = 0; i < abs(duty_cycle) / 25; i++)
     {
+        /* Display positive duty cycle. */
         if (duty_cycle > 0 )
-            print_str(bar, (vec2d) { outline_pos.x + 1, pos.y - 1 - i });
+        {
+            bar_pos.y = pos.y - 1 - i;
+            print_str(bar, bar_pos);
+        }
+
+        /* Display negative duty cycle. */
         else if (duty_cycle < 0)
-            print_str(bar, (vec2d) { outline_pos.x + 1, pos.y + 1 + i });
+        {
+            bar_pos.y = pos.y + 1 + i;
+            print_str(bar, bar_pos);
+        }
     }
 
-    /* Revert text colour changes. */
+    /* Revert changes to the background colour. */
     text_mode(NORMAL);
 
     /* De-allocating memory. */
@@ -374,15 +385,12 @@ void display_drive_screen(interface i, drive d)
     vec2d rmotor_pos;   /* The position to place the right motor bar. */
     vec2d controls_pos; /* The position of the control instructions. */
 
-    /* Get the size of the terminal. */
-    term_res = get_res();
-
     /* Display the screen title. */
-    display_screen_title_str("Drive Screen");
+    display_screen_title_str(i, "Drive Screen");
 
     /* Set the location of the drive bars. */
-    lmotor_pos = (vec2d) { term_res.x / 3, term_res.y / 3 };
-    rmotor_pos = (vec2d) { term_res.x / 3 * 2, term_res.y / 3 };
+    lmotor_pos = (vec2d) { i->term_res.x / 3    , i->term_res.y / 3 };
+    rmotor_pos = (vec2d) { i->term_res.x / 3 * 2, i->term_res.y / 3 };
 
     /* Display the drive bars. */ 
     display_drive_bar("Motor 1", drive_get_lmotor_duty_cycle(d), lmotor_pos);
@@ -398,18 +406,13 @@ void display_drive_screen(interface i, drive d)
 /**
  * This function displays the rack screen.
  */
-void display_rack_screen()
+void display_rack_screen(interface i)
 {
-    vec2d bounds;   /* The size of the terminal. */
-    
     /* Display the title of the screen. */
-    display_screen_title_str("Rack Screen");
-    
-    /* Get the terminal size. */
-    bounds = get_res();
+    display_screen_title_str(i, "Rack Screen");
 
     /* Place the cursor in the top, right hand corner. */
-    put_cursor(bounds.x, 0);
+    put_cursor(i->term_res.x, 0);
 }
 
 /**
@@ -423,6 +426,6 @@ void interface_display(interface i, drive d, rack r)
     /* Check which screen to display and display it. */
     if (i->start_screen_on) display_start_screen(i);
     else if (i->drive_screen_on) display_drive_screen(i, d);
-    else if (i->rack_screen_on) display_rack_screen();
+    else if (i->rack_screen_on) display_rack_screen(i);
 }
 
