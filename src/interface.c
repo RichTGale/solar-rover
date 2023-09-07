@@ -40,7 +40,7 @@ void interface_init(interface* ip)
 
 
     /* Check if terminal is large enough to display the interface. */
-    if ((termres()).x < (*ip)->min_width || (termres()).y < (*ip)->min_height)
+    if ((get_res()).x < (*ip)->min_width || (get_res()).y < (*ip)->min_height)
     {
         /* The terminal window is not large enough so print an error
          * message and exit the program. */
@@ -237,6 +237,42 @@ void interface_update(interface* ip, enum InterfaceCommand interface_command)
 }
 
 /**
+ * This function displays the string provided to it at the top and center
+ * of the terminal.
+ */
+void display_screen_title_str(char* title)
+{
+    vec2d pos;  /* The position of the title. */
+
+    /* Set the position of the title. */
+    pos.x = (get_res()).x / 2 - strlen(title) / 2;
+    pos.y = 1;
+
+    /* Display the title. */
+    print_str_mod(title, pos, WHITE, BOLD);
+}
+
+/**
+ * This function displays a string at the bottom and center of the terminal.
+ */
+void display_controls(interface i, char* controls)
+{
+    vec2d pos;      /* The position of the control instructions. */
+    vec2d term_res; /* The size of the terminal. */
+
+    term_res = get_res();
+
+    /* Set the control instruction location. */
+    pos.x = term_res.x / 2 - strlen(controls) / 2;
+    pos.y = term_res.y - 1;
+    if (term_res.y > i->min_height + 1)
+        pos.y = i->min_height + 1;
+
+    /* Print the control instructions. */
+    print_str_mod(controls, pos, WHITE, BOLD);
+}
+
+/**
  * This function displays the start screen.
  */
 void display_start_screen(interface i)
@@ -251,15 +287,14 @@ void display_start_screen(interface i)
     char* controls;                 /* The control instructions. */
 
     /* Get the bounds of the terminal. */
-    term_res = termres();
+    term_res = get_res();
 
     /* Set the position of the title. */
     title_pos.x = term_res.x / 2 - TITLE_WIDTH / 2;
     title_pos.y = 1;
 
     /* Draw the program title. */
-    textmode(NORMAL);
-    termprintfs("../../art/title.txt", title_pos, WHITE, NORMAL);
+    print_fs_mod("../../art/title.txt", title_pos, WHITE, BOLD);
 
     /* Set the position of the rpi info. */
     info_pos.x = title_pos.x;
@@ -279,12 +314,10 @@ void display_start_screen(interface i)
         controls_pos.y = i->min_height + 1;
 
     /* Printing the message. */
-    textmode(BOLD);
-    termprint(controls, controls_pos);
-    textmode(NORMAL);
+    print_str_mod(controls, controls_pos, WHITE, BOLD);
 
     /* Place the cursor in the top, right hand corner. */
-    cursput(term_res.x, 0);
+    put_cursor(term_res.x, 0);
 
     /* De-allocating memory. */
     free(controls);
@@ -293,39 +326,39 @@ void display_start_screen(interface i)
 /** 
  * This function visualises the duty cycle of a motor. 
  */
-void display_drive_bar(char* label, int duty_cycle, vec2d location )
+void display_drive_bar(char* label, int duty_cycle, vec2d pos )
 {
-    vec2d label_location;   /* The location of the label. */
-    vec2d outline_location; /* The location of the outline. */
-    char* bar;              /* The bar. */
+    vec2d label_pos;    /* The position of the bar's label. */
+    vec2d outline_pos;  /* The position of the bar's outline. */
+    char* bar;          /* The bar. */
  
     /* Create the bar. */
     strfmt(&bar, "     ");
     
     /* Set the location of the bar outline and display it. */
-    outline_location.x = location.x - strlen(bar) / 2;
-    outline_location.y = location.y - 5;
-    termprintfs("../../art/drive_bar.txt", outline_location, WHITE, NORMAL);
+    outline_pos.x = pos.x - strlen(bar) / 2;
+    outline_pos.y = pos.y - 5;
+    print_fs_mod("../../art/drive_bar.txt", outline_pos, WHITE, BOLD);
 
     /* Set the location of the label and display it. */
-    label_location.x = location.x - strlen(label) - strlen(bar) - 1;
-    label_location.y = location.y; 
-    termprint(label, label_location);
+    label_pos.x = pos.x - strlen(label) - strlen(bar) - 1;
+    label_pos.y = pos.y; 
+    print_str_mod(label, label_pos, WHITE, NORMAL);
 
-    /* Set the bar colour to red. */ 
-    curscolb(RED);
+    /* Set the bar colour. */ 
+    text_bcol(YELLOW);
 
     /* Display the bar. */
     for (int i = 0; i < abs(duty_cycle) / 25; i++)
     {
         if (duty_cycle > 0 )
-            termprint(bar, (vec2d) { outline_location.x + 1, location.y - 1 - i });
+            print_str(bar, (vec2d) { outline_pos.x + 1, pos.y - 1 - i });
         else if (duty_cycle < 0)
-            termprint(bar, (vec2d) { outline_location.x + 1, location.y + 1 + i });
+            print_str(bar, (vec2d) { outline_pos.x + 1, pos.y + 1 + i });
     }
 
     /* Revert text colour changes. */
-    textmode(NORMAL);
+    text_mode(NORMAL);
 
     /* De-allocating memory. */
     free(bar);
@@ -336,52 +369,30 @@ void display_drive_bar(char* label, int duty_cycle, vec2d location )
  */
 void display_drive_screen(interface i, drive d)
 {
-    vec2d bounds;               /* The size of the terminal. */
-    vec2d lmotor_location;      /* The location of the left motor bar. */
-    vec2d rmotor_location;      /* The location to place the right motor bar. */
-    vec2d controls_location;    /* The location of the control instructions. */
-    char* title;                /* The name of the screen. */
-    char* controls;             /* The control instructions. */
+    vec2d term_res;     /* The size of the terminal. */
+    vec2d lmotor_pos;   /* The position of the left motor bar. */
+    vec2d rmotor_pos;   /* The position to place the right motor bar. */
+    vec2d controls_pos; /* The position of the control instructions. */
 
     /* Get the size of the terminal. */
-    bounds = termres();
-
-    /* Create the screen title. */
-    strfmt(&title, "Drive Screen");
+    term_res = get_res();
 
     /* Display the screen title. */
-    termprint(title, (vec2d) { bounds.x / 2 - strlen(title) / 2, 1 });
+    display_screen_title_str("Drive Screen");
 
     /* Set the location of the drive bars. */
-    lmotor_location = (vec2d) { bounds.x / 4, 10 };
-    rmotor_location = (vec2d) { bounds.x / 4 * 3, 10 };
+    lmotor_pos = (vec2d) { term_res.x / 3, term_res.y / 3 };
+    rmotor_pos = (vec2d) { term_res.x / 3 * 2, term_res.y / 3 };
 
     /* Display the drive bars. */ 
-    display_drive_bar("Motor 1", drive_get_lmotor_duty_cycle(d), lmotor_location);
-    display_drive_bar("Motor 2", drive_get_rmotor_duty_cycle(d), rmotor_location);
-
-    /* Create the control instructions. */
-    strfmt(&controls, 
-            "'w': Accelerate | 'a': Left | 's': Decelerate | 'd': Right | "
-            "'x': Stop | 'q': Start Screen");
-
-    /* Set the control instruction location. */
-    controls_location.x = bounds.x / 2 - strlen(controls) / 2;
-    controls_location.y = bounds.y - 1;
-    if (bounds.y > i->min_height + 1)
-        controls_location.y = i->min_height + 1;
-
-    /* Print the control instructions. */
-    textmode(BOLD);
-    termprint(controls, controls_location);
-    textmode(NORMAL);
+    display_drive_bar("Motor 1", drive_get_lmotor_duty_cycle(d), lmotor_pos);
+    display_drive_bar("Motor 2", drive_get_rmotor_duty_cycle(d), rmotor_pos);
+    
+    display_controls(i, "'w': Accelerate | 'a': Left | 's': Decelerate | "
+                        "'d': Right | 'x': Stop | 'q': Start Screen");
 
     /* Place the cursor in the top, right hand corner. */
-    cursput(bounds.x, 0);
-
-    /* De-allocating memory. */
-    free(title);
-    free(controls);
+    put_cursor(term_res.x, 0);
 }
 
 /**
@@ -389,7 +400,16 @@ void display_drive_screen(interface i, drive d)
  */
 void display_rack_screen()
 {
+    vec2d bounds;   /* The size of the terminal. */
+    
+    /* Display the title of the screen. */
+    display_screen_title_str("Rack Screen");
+    
+    /* Get the terminal size. */
+    bounds = get_res();
 
+    /* Place the cursor in the top, right hand corner. */
+    put_cursor(bounds.x, 0);
 }
 
 /**
@@ -398,7 +418,7 @@ void display_rack_screen()
 void interface_display(interface i, drive d, rack r)
 {
     /* Clear the terminal. */
-    termclear();
+    clear();
 
     /* Check which screen to display and display it. */
     if (i->start_screen_on) display_start_screen(i);
