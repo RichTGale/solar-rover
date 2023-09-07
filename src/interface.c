@@ -32,12 +32,15 @@ void check_res(interface i)
     /* Check if terminal is large enough to display the interface. */
     if (i->term_res.x < i->min_width || i->term_res.y < i->min_height)
     {
+        /* Clearing the terminal. */
+        clear();
+
         /* The terminal window is not large enough so print an error
          * message and exit the program. */
-        fprintf(stdout, "The interface failed to initialise because "
-                        "the terminal window is not large enough. "
-                        "It needs to have a minimum size of %dx%d.\n",
-                        i->min_width, i->min_height);
+        fprintf(stdout, "The interface failed is not able to be displayed"
+                        " because the terminal window is not large enough.\n"
+                        "The terminal window needs to have a minimum size of"
+                        " %dx%d.\n", i->min_width, i->min_height);
         exit(EXIT_FAILURE);
     }
 
