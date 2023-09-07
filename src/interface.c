@@ -23,6 +23,27 @@ struct interface_data {
 };
 
 /**
+ * This function checks if the terminal window is large enough to display
+ * the interface. If it is not large enough, an error message is printed
+ * and the program exits.
+ */
+void check_res(interface i)
+{
+    /* Check if terminal is large enough to display the interface. */
+    if (i->term_res.x < i->min_width || i->term_res.y < i->min_height)
+    {
+        /* The terminal window is not large enough so print an error
+         * message and exit the program. */
+        fprintf(stdout, "The interface failed to initialise because "
+                        "the terminal window is not large enough. "
+                        "It needs to have a minimum size of %dx%d.\n",
+                        i->min_width, i->min_height);
+        exit(EXIT_FAILURE);
+    }
+
+}
+
+/**
  * This is the data-structure of the interface type.
  */
 void interface_init(interface* ip)
@@ -43,16 +64,7 @@ void interface_init(interface* ip)
     (*ip)->term_res = get_res();
 
     /* Check if terminal is large enough to display the interface. */
-    if ((*ip)->term_res.x < (*ip)->min_width
-            || (*ip)->term_res.y < (*ip)->min_height)
-    {
-        /* The terminal window is not large enough so print an error
-         * message and exit the program. */
-        fprintf(stdout, "The interface failed to initialise because "
-                        "the terminal window is not large enough. "
-                        "It needs to have a minimum size of 100x25.\n");
-        exit(EXIT_FAILURE);
-    }
+    check_res(*ip);
 }
 
 /**
@@ -215,6 +227,9 @@ void interface_update(interface* ip, enum InterfaceCommand interface_command)
     /* Update the resolution of the terminal. */
     (*ip)->term_res = get_res();
 
+    /* Check if terminal is large enough to display the interface. */
+    check_res(*ip);
+    
     switch (interface_command)
     {
         case TERMINATE :
