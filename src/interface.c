@@ -4,7 +4,7 @@
  * This file contains the internal data-structure and function definitions
  * for the interface type.
  *
- * Version: 0.1.1
+ * Version: 0.2.1
  * Author(s): Richard Gale
  */
 
@@ -47,7 +47,7 @@ void check_res(interface i)
 }
 
 /**
- * This is the data-structure of the interface type.
+ * This function initialises the interface provided to it.
  */
 void interface_init(interface* ip)
 {

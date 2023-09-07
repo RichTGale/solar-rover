@@ -1,3 +1,11 @@
+/**
+ * main.c
+ *
+ * This file contains the main function for the solar-rover program.
+ *
+ * Version: 1.0.0
+ * Author(s): Richard Gale
+ */
 
 #include <stdlib.h>
 

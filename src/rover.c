@@ -4,7 +4,7 @@
  * This file contains the internal data-structure and function definitions
  * for the rover type.
  *
- * Version: 0.1.1
+ * Version: 0.2.1
  * Author: Richard Gale
  */
 

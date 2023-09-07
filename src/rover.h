@@ -4,7 +4,7 @@
  * This file contains the public data-structure and function prototype
  * declarations for the rover type.
  *
- * Version: 0.1.1
+ * Version: 0.2.1
  * Author(s): Richard Gale
  */
 

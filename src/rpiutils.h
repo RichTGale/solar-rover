@@ -4,7 +4,7 @@
  * This file contains function prototype declarations for various utility
  * functions for the raspberry pi computer.
  *
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author(s): Richard Gale
  */
 
