@@ -11,7 +11,7 @@ target_link_libraries(rpiutils LINK_PUBLIC pi-gpio mycutils)
 target_link_libraries(brushed_motor LINK_PUBLIC pi-gpio)
 target_link_libraries(stepper_motor LINK_PUBLIC pi-gpio mycutils)
 target_link_libraries(drive LINK_PUBLIC brushed_motor)
-target_link_libraries(rack LINK_PUBLIC stepper_motor)
+target_link_libraries(rack LINK_PUBLIC stepper_motor mycutils)
 target_link_libraries(interface LINK_PUBLIC drive rack mycutils rpiutils)
 target_link_libraries(rover LINK_PUBLIC interface drive rack mycutils)
 
