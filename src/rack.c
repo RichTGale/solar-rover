@@ -214,7 +214,6 @@ void rotate_axis(rack* rp, char axis, int target)
         for (dcount = 0; dcount < dtotal; dcount++)
         {
             rotate_x_1degree(rp, dir);
-            
             if (dir == CLOCKWISE)
                 (*dcurrent)++;
             else
@@ -230,7 +229,6 @@ void rotate_axis(rack* rp, char axis, int target)
         for (dcount = 0; dcount < dtotal; dcount++)
         {
             rotate_z_1degree(rp, dir);
-            
             if (dir == CLOCKWISE)
                 (*dcurrent)++;
             else
@@ -248,8 +246,32 @@ void rotate_axis(rack* rp, char axis, int target)
  */
 void light_search(rack* rp)
 {
-    rotate_axis(rp, 'z', -(*rp)->max_z);
+    rotate_axis(rp, 'x', (*rp)->max_x);
     rotate_axis(rp, 'z', (*rp)->max_z);
+    /* TODO: Get light reading. */
+
+    rotate_axis(rp, 'z', 0);
+    /* TODO: Get light reading. */
+
+    rotate_axis(rp, 'z', -(*rp)->max_z);
+    /* TODO: Get light reading. */
+    
+    rotate_axis(rp, 'x', 0);
+    rotate_axis(rp, 'z', 0);
+    /* TODO: Get light reading. */
+   
+    rotate_axis(rp, 'x', -(*rp)->max_x);
+    rotate_axis(rp, 'z', (*rp)->max_z);
+    /* TODO: Get light reading. */
+
+    rotate_axis(rp, 'z', 0);
+    /* TODO: Get light reading. */
+    
+    rotate_axis(rp, 'z', -(*rp)->max_z);
+    /* TODO: Get light reading. */
+
+    /* Go to the position of the highest reading. */
+    rotate_axis(rp, 'x', 0);
     rotate_axis(rp, 'z', 0);
 }
 
