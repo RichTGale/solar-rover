@@ -181,6 +181,10 @@ void build_rack_commands(commands* cmdsp, char user_in)
             (*cmdsp).rack_command = Z_CLOCKWISE;
             break;
 
+        case 'l' :
+            (*cmdsp).rack_command = LIGHT_SEARCH;
+            break;
+        
         /* Turn on the start screen. */
         case 'q' :
             (*cmdsp).interface_command = START_SCREEN_ON;

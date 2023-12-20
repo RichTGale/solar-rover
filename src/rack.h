@@ -11,9 +11,11 @@
 #ifndef rack_h
 #define rack_h
 
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "stepper_motor.h"
+#include "mycutils.h"
 
 /**
  * These are the directions in which the rack can rotate.
@@ -29,6 +31,7 @@ enum RackCommand {
     X_ANTICLOCKWISE,
     Z_CLOCKWISE,
     Z_ANTICLOCKWISE,
+    LIGHT_SEARCH
 };
 
 /**
