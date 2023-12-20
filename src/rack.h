@@ -16,6 +16,7 @@
 
 #include "stepper_motor.h"
 #include "mycutils.h"
+#include "ldr.h"
 
 /**
  * These are the directions in which the rack can rotate.

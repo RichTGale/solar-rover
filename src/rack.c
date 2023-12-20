@@ -21,6 +21,9 @@ struct rack_data {
     /* This is the stepper motor that controls the rack's x axis. */
     stepper_motor xmotor;
 
+    /* The light dependant resistor. */
+    ldr l;
+
     /* This is the maximum angle the x axis can rotate to. */
     int max_x;
 
@@ -98,6 +101,9 @@ void rack_init(rack* rp)
     stepper_motor_init(&(*rp)->xmotor, 2048, 22, 10, 24, 9);
     stepper_motor_steps_per_sec(&(*rp)->xmotor, 400);
 
+    /* Initialise light the light dependant resistor. */
+    ldr_init(&(*rp)->l, 14, 15, 18);
+
     /* Initialise the maximum degress of rotation. */
     (*rp)->max_x = 25;
     (*rp)->max_z = 90;
@@ -114,9 +120,12 @@ void rack_init(rack* rp)
  */
 void rack_term(rack* rp)
 {
-    /* Terminating the stepper_motors. */
+    /* Terminate the stepper_motors. */
     stepper_motor_term(&(*rp)->zmotor);
     stepper_motor_term(&(*rp)->xmotor);
+
+    /* Terminate the light dependant resistor. */
+    ldr_term(&(*rp)->l);
 
     /* De-allocate memory from the rack. */
     free(*rp);
@@ -246,32 +255,32 @@ void rotate_axis(rack* rp, char axis, int target)
  */
 void light_search(rack* rp)
 {
-    rotate_axis(rp, 'x', (*rp)->max_x);
+//    rotate_axis(rp, 'x', (*rp)->max_x);
     rotate_axis(rp, 'z', (*rp)->max_z);
-    /* TODO: Get light reading. */
+    printf("is highest reading: %d\n", ldr_read((*rp)->l));
 
     rotate_axis(rp, 'z', 0);
-    /* TODO: Get light reading. */
+    printf("is highest reading: %d\n", ldr_read((*rp)->l));
 
     rotate_axis(rp, 'z', -(*rp)->max_z);
-    /* TODO: Get light reading. */
+    printf("is highest reading: %d\n", ldr_read((*rp)->l));
     
-    rotate_axis(rp, 'x', 0);
+//    rotate_axis(rp, 'x', 0);
     rotate_axis(rp, 'z', 0);
-    /* TODO: Get light reading. */
+    printf("is highest reading: %d\n", ldr_read((*rp)->l));
    
-    rotate_axis(rp, 'x', -(*rp)->max_x);
+//    rotate_axis(rp, 'x', -(*rp)->max_x);
     rotate_axis(rp, 'z', (*rp)->max_z);
-    /* TODO: Get light reading. */
+    printf("is highest reading: %d\n", ldr_read((*rp)->l));
 
     rotate_axis(rp, 'z', 0);
-    /* TODO: Get light reading. */
+    printf("is highest reading: %d\n", ldr_read((*rp)->l));
     
     rotate_axis(rp, 'z', -(*rp)->max_z);
-    /* TODO: Get light reading. */
+    printf("is highest reading: %d\n", ldr_read((*rp)->l));
 
     /* Go to the position of the highest reading. */
-    rotate_axis(rp, 'x', 0);
+//    rotate_axis(rp, 'x', 0);
     rotate_axis(rp, 'z', 0);
 }
 
