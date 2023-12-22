@@ -255,33 +255,37 @@ void rotate_axis(rack* rp, char axis, int target)
  */
 void light_search(rack* rp)
 {
-//    rotate_axis(rp, 'x', (*rp)->max_x);
-    rotate_axis(rp, 'z', (*rp)->max_z);
-    printf("is highest reading: %d\n", ldr_read((*rp)->l));
+    vec2d highest;
+    int x, z;
+    bool skip;
 
-    rotate_axis(rp, 'z', 0);
-    printf("is highest reading: %d\n", ldr_read((*rp)->l));
+	for (x = -(*rp)->max_x; x <= (*rp)->max_x; x += (*rp)->max_x)
+    {
+        skip = false;
+        rotate_axis(rp, 'x', x);
+	    for (z = -(*rp)->max_z; z <= (*rp)->max_z && !skip; z += (*rp)->max_z)
+        {
+            if (x == 0)
+            {
+                rotate_axis(rp, 'z', 0);
+                skip = true;
+            }
+            else
+            {
+                rotate_axis(rp, 'z', z);
+            }
 
-    rotate_axis(rp, 'z', -(*rp)->max_z);
-    printf("is highest reading: %d\n", ldr_read((*rp)->l));
-    
-//    rotate_axis(rp, 'x', 0);
-    rotate_axis(rp, 'z', 0);
-    printf("is highest reading: %d\n", ldr_read((*rp)->l));
-   
-//    rotate_axis(rp, 'x', -(*rp)->max_x);
-    rotate_axis(rp, 'z', (*rp)->max_z);
-    printf("is highest reading: %d\n", ldr_read((*rp)->l));
-
-    rotate_axis(rp, 'z', 0);
-    printf("is highest reading: %d\n", ldr_read((*rp)->l));
-    
-    rotate_axis(rp, 'z', -(*rp)->max_z);
-    printf("is highest reading: %d\n", ldr_read((*rp)->l));
+            if (ldr_read((*rp)->l))
+            {
+                highest.x = x;
+                highest.y = z;
+            }
+        }
+    }
 
     /* Go to the position of the highest reading. */
-//    rotate_axis(rp, 'x', 0);
-    rotate_axis(rp, 'z', 0);
+    rotate_axis(rp, 'x', highest.x);
+    rotate_axis(rp, 'z', highest.y);
 }
 
 /**
