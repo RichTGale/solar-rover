@@ -265,11 +265,15 @@ void light_search(rack* rp)
         rotate_axis(rp, 'x', x);
 	    for (z = -(*rp)->max_z; z <= (*rp)->max_z && !skip; z += (*rp)->max_z)
         {
+            /* Only do one reading when the x axis id flat. */
             if (x == 0)
             {
                 rotate_axis(rp, 'z', 0);
+                z = 0;
                 skip = true;
             }
+
+            /* Do three readings when x axis is angled. */
             else
             {
                 rotate_axis(rp, 'z', z);
