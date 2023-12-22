@@ -37,17 +37,13 @@ bool ldr_read(ldr l)
          * ready for it to make a reading. */
         output_gpio(l->send_pin, HIGH);
    
-    /* Wait for HIGH from arduino (pin 15). This tells us that the arduino made a reading. */
+    /* Wait for HIGH from arduino (pin 15). This tells us that the arduino
+     * made a reading. */
     } while (input_gpio(l->read_pin1) == LOW);
   
     output_gpio(l->send_pin, LOW);
 
     /* Check for HIGH from arduino (pin 18). This tells us that the reading
      * detected the most light out of any reading so far. */
-    if (input_gpio(l->read_pin2) == HIGH)
-    {
-        highest = true;
-    }
-
-    return highest;
+    return input_gpio(l->read_pin2) == HIGH;
 }
