@@ -4,7 +4,7 @@
  * This file contains the internal data-structure and function definitions
  * for the rack type.
  *
- * Version: 0.1.1
+ * Version: 0.1.2
  * Author(s): Richard Gale
  */
 
@@ -251,21 +251,31 @@ void rotate_axis(rack* rp, char axis, int target)
 
 /**
  * This function moves the rack so its solar panels are pointing in the
- * direction of the most light.
+ * direction of the brightest light.
  */
 void light_search(rack* rp)
 {
+    /* This is the position that is pointed towards the brightest light. */
     vec2d highest;
+
+    /* These are the current angle of each axis (-90 -> 90). */
     int x, z;
+
+    /* Whether to skip ahead through the loop. */
     bool skip;
 
+    /* Rotate the x axis. */
 	for (x = -(*rp)->max_x; x <= (*rp)->max_x; x += (*rp)->max_x)
     {
-        skip = false;
         rotate_axis(rp, 'x', x);
+        
+        /* Only skip z axis positions. */
+        skip = false;
+
+        /* Rotate the z axis. */
 	    for (z = -(*rp)->max_z; z <= (*rp)->max_z && !skip; z += (*rp)->max_z)
         {
-            /* Only do one reading when the x axis id flat. */
+            /* Only do one reading when the x axis is flat. */
             if (x == 0)
             {
                 rotate_axis(rp, 'z', 0);
@@ -279,6 +289,7 @@ void light_search(rack* rp)
                 rotate_axis(rp, 'z', z);
             }
 
+            /* Check if the ldr found the brightest position and record it. */
             if (ldr_read((*rp)->l))
             {
                 highest.x = x;
@@ -287,7 +298,7 @@ void light_search(rack* rp)
         }
     }
 
-    /* Go to the position of the highest reading. */
+    /* Rotate to the position pointing at the brightest light. */
     rotate_axis(rp, 'x', highest.x);
     rotate_axis(rp, 'z', highest.y);
 }
