@@ -234,7 +234,7 @@ void rotate_axis(rack* rp, char axis, int target)
     }
     else
     {
-        /* Rotate the y axis. */
+        /* Rotate the z axis. */
         for (dcount = 0; dcount < dtotal; dcount++)
         {
             rotate_z_1degree(rp, dir);
