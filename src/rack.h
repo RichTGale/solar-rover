@@ -11,6 +11,7 @@
 #ifndef rack_h
 #define rack_h
 
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 

@@ -10,6 +10,12 @@
 
 #include "rack.h"
 
+typedef struct {
+    int x;
+    int z;
+    bool visited;
+} position;
+
 /**
  * This is the internal data-structure of the Rack type.
  */
@@ -35,6 +41,8 @@ struct rack_data {
 
     /* This is the current angle of the z axis. */
     int cur_z;
+
+    position positions[7];
 };
 
 /**
@@ -113,6 +121,34 @@ void rack_init(rack* rp)
 
     /* Initialise the current angle of the z axis. */
     (*rp)->cur_z = get_degree_of_rotation("../../cur_z.txt");
+
+    (*rp)->positions[0].x =  (*rp)->max_x;
+    (*rp)->positions[0].z =  (*rp)->max_z;
+    (*rp)->positions[0].visited = false;
+
+    (*rp)->positions[1].x =  (*rp)->max_x;
+    (*rp)->positions[1].z =  0;
+    (*rp)->positions[1].visited = false;
+
+    (*rp)->positions[2].x =  (*rp)->max_x;
+    (*rp)->positions[2].z = -(*rp)->max_z;
+    (*rp)->positions[2].visited = false;
+
+    (*rp)->positions[3].x =  0;
+    (*rp)->positions[3].z =  0;
+    (*rp)->positions[3].visited = false;
+
+    (*rp)->positions[4].x = -(*rp)->max_x;
+    (*rp)->positions[4].z = -(*rp)->max_z;
+    (*rp)->positions[4].visited = false;
+
+    (*rp)->positions[5].x = -(*rp)->max_x;
+    (*rp)->positions[5].z =  0;
+    (*rp)->positions[5].visited = false;
+
+    (*rp)->positions[6].x = -(*rp)->max_x;
+    (*rp)->positions[6].z = (*rp)->max_z;
+    (*rp)->positions[6].visited = false;
 }
 
 /**
@@ -250,57 +286,128 @@ void rotate_axis(rack* rp, char axis, int target)
 }
 
 /**
+ * This function returns the position of the rack that is closest to the
+ * postion passed to the function.
+ */
+position get_closest_position(rack* rp, position current)
+{
+    /* This is the closest position to the current position. */
+    position closest;
+
+    /* The x axis takes a lot longer to move than the z axis. The x axis' motor
+     * needs to take 568 steps per degree, compared to the z axis' motor which
+     * only need to take 9.
+     * This variable maps the number of degrees the x axis needs to rotate to
+     * the number the z axis needs to rotate. */
+    int mapped_x;
+
+    /* This is the minimum distance in degrees that the axes need to travel to
+     * reach another position that has not yet been reached */
+    int min;
+
+    /* This is the index of the position being checked. */
+    int p;
+
+    /* The sum of movement of both axes. */
+    int distance;
+
+    /* This is the index of the position that was closest to the current
+     * position. */
+    int closest_index;
+
+    /* Calculate the mapped maximum distance the x axis will have to move. */
+    mapped_x = 
+        map((*rp)->max_x * 2 * 1.0, 0, (*rp)->max_x * 2, 0, (*rp)->max_z * 2);
+
+    /* Calculate the maximum distance both axes will have to move combined.
+     * This is the sum of both axes maximum potential movement. */
+    min = mapped_x + ((*rp)->max_z * 2);
+
+    for (p = 0; p < 7; p++)
+    {
+        /* Don't check previously visited positions. */
+        if (!(*rp)->positions[p].visited)
+        {
+            /* Map the x axisi for the current position. */
+            mapped_x = abs((*rp)->positions[p].x - current.x);
+            mapped_x = map(mapped_x * 1.0, 0, (*rp)->max_x, 0, (*rp)->max_z);
+
+            /* Calculate the sum of the movement of both axes in degrees. */
+            distance = mapped_x + abs((*rp)->positions[p].z - current.z);
+            
+            /* Check if the sum of movement in degrees of both axes is less
+             * or equal to the previously calculated position that was closest
+             * to the current position. */
+            if (distance <= min)
+            {
+                /* This is the position that is the closest to the current
+                 * position. */
+                min = distance;
+	            closest.x = (*rp)->positions[p].x;
+	            closest.z = (*rp)->positions[p].z;
+                closest_index = p;
+            }
+        }
+    }
+
+    /* Mark the closest postion as checked. */
+    (*rp)->positions[closest_index].visited = true;
+
+    /* Return the closest position. */
+    return closest;
+}
+
+
+/**
  * This function moves the rack so its solar panels are pointing in the
  * direction of the brightest light.
  */
 void light_search(rack* rp)
 {
-    /* This is the position that is pointed towards the brightest light. */
-    vec2d highest;
+    /* This is the current position of the rack. */
+    position current;
 
-    /* These are the current angle of each axis (-90 -> 90). */
-    int x, z;
+    /* This is the position of the rack that is pointed towards the brightest
+     * bit of light. */
+    position brightest;
 
-    /* Whether to skip ahead through the loop. */
-    bool skip;
+    /* Get the current position of the rack. */ 
+    current.x = get_degree_of_rotation("../../cur_x.txt");
+    current.z = get_degree_of_rotation("../../cur_z.txt");
 
-    /* Rotate the x axis. */
-	for (x = -(*rp)->max_x; x <= (*rp)->max_x; x += (*rp)->max_x)
+
+    for (int i = 0; i < 7; i++)
     {
-        rotate_axis(rp, 'x', x);
+        /* Get the next closest position to the current position. */
+        current = get_closest_position(rp, current);
+
+        /* Move to the next position. */
+        rotate_axis(rp, 'x', current.x);
+        rotate_axis(rp, 'z', current.z);
+
         
-        /* Only skip z axis positions. */
-        skip = false;
-
-        /* Rotate the z axis. */
-	    for (z = -(*rp)->max_z; z <= (*rp)->max_z && !skip; z += (*rp)->max_z)
+        /* Read the light sensor. */
+        if (ldr_read((*rp)->l))
         {
-            /* Only do one reading when the x axis is flat. */
-            if (x == 0)
-            {
-                rotate_axis(rp, 'z', 0);
-                z = 0;
-                skip = true;
-            }
-
-            /* Do three readings when x axis is angled. */
-            else
-            {
-                rotate_axis(rp, 'z', z);
-            }
-
-            /* Check if the ldr found the brightest position and record it. */
-            if (ldr_read((*rp)->l))
-            {
-                highest.x = x;
-                highest.y = z;
-            }
+            /* Record the brightest reading. */
+            brightest.x = current.x;
+            brightest.z = current.z;
         }
     }
+    
+    /* Move to the position of the brightest reading. */
+    rotate_axis(rp, 'x', brightest.x);
+    rotate_axis(rp, 'z', brightest.z);
 
-    /* Rotate to the position pointing at the brightest light. */
-    rotate_axis(rp, 'x', highest.x);
-    rotate_axis(rp, 'z', highest.y);
+    /* Write the current position to disk. */
+    store_degree_of_rotation("../../cur_x.txt", brightest.x);
+    store_degree_of_rotation("../../cur_z.txt", brightest.z);
+
+    /* Reset all positions to unvisited in preparation for the next search. */
+    for (int p = 0; p < 7; p++)
+    {
+        (*rp)->positions[p].visited = false;
+    }
 }
 
 /**
