@@ -220,6 +220,7 @@ void rotate_z_1degree(rack* rp, enum RotationDirection direction)
     }
     else if (direction == ANTICLOCKWISE)
     {
+        /* Check if the rack isi not already at maximum rotation. */
         if (button_get_state((*rp)->limit_switch) == HIGH)
         {
             stepper_motor_step(&(*rp)->zmotor, -ONE_DEGREE_Z);
@@ -227,6 +228,7 @@ void rotate_z_1degree(rack* rp, enum RotationDirection direction)
         }
         else
         {
+            /* The rack is a its maximum anti-clockwise rotation. */
             reset_z(rp);
         }
     }
