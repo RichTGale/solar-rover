@@ -10,6 +10,25 @@
 
 #include "rack.h"
 
+/* Judging from the 3d models simulations in blender, 7.5 revolutions
+ * of the worm gear equals 1 revolution of the spur gear.
+ * Gear ratio = 7.5:1. 
+ * 2048 steps * 7.5 = 15360 steps per revolution of the spur gear. 
+ * There are 200 teeth on the internal gear (if it was whole) and there
+ * are 15 teeth on the spur gear. 
+ * Gear ratio = 200:15 = 13.33333:1.
+ * 15360 steps * 13.33333 = ~204,800 steps per internal gear revolution.
+ * 204800 steps / 360 degress = ~568 steps per degree of the internal
+ * gear. */
+#define ONE_DEGREE_X 568
+
+/* The number of teeth on the stepper gear is 62, the number on the
+ * internal gear is 95.
+ * Gear ratio = 95:62 = 1.532258065:1.
+ * 2048 steps * 1.532258065 = ~3138 steps per internal gear revolution.
+ * 3138 steps / 360 degress = ~9 steps per degree of the internal gear. */
+#define ONE_DEGREE_Z 9
+
 typedef struct {
     int x;
     int z;
@@ -30,6 +49,15 @@ struct rack_data {
     /* The light dependant resistor. */
     ldr l;
 
+    /* The limit switch. */
+    button limit_switch;
+    
+    /* This is an array of positions. */
+    position* positions;
+
+    /* This is the amount of positions the rack can be in. */
+    int num_positions;
+
     /* This is the maximum angle the x axis can rotate to. */
     int max_x;
 
@@ -41,8 +69,26 @@ struct rack_data {
 
     /* This is the current angle of the z axis. */
     int cur_z;
+    
+//    /* Judging from the 3d models simulations in blender, 7.5 revolutions
+//     * of the worm gear equals 1 revolution of the spur gear.
+//     * Gear ratio = 7.5:1. 
+//     * 2048 steps * 7.5 = 15360 steps per revolution of the spur gear. 
+//     * There are 200 teeth on the internal gear (if it was whole) and there
+//     * are 15 teeth on the spur gear. 
+//     * Gear ratio = 200:15 = 13.33333:1.
+//     * 15360 steps * 13.33333 = ~204,800 steps per internal gear revolution.
+//     * 204800 steps / 360 degress = ~568 steps per degree of the internal
+//     * gear. */
+//    const int ONE_DEGREE_X = 568;
+//
+//    /* The number of teeth on the stepper gear is 62, the number on the
+//     * internal gear is 95.
+//     * Gear ratio = 95:62 = 1.532258065:1.
+//     * 2048 steps * 1.532258065 = ~3138 steps per internal gear revolution.
+//     * 3138 steps / 360 degress = ~9 steps per degree of the internal gear. */
+//    const int ONE_DEGREE_Z = 9;
 
-    position positions[7];
 };
 
 /**
@@ -100,6 +146,8 @@ void store_degree_of_rotation(char* fname, int degree)
  */
 void rack_init(rack* rp)
 {
+    int p, x, z;
+
     /* Allocate memory to the rack. */
     *rp = (rack) malloc(sizeof(struct rack_data));
 
@@ -112,6 +160,10 @@ void rack_init(rack* rp)
     /* Initialise light the light dependant resistor. */
     ldr_init(&(*rp)->l, 14, 15, 18);
 
+    /* Initialise the limit switch. */
+    button_init(&(*rp)->limit_switch, 21, 2);
+    set_debounce_time(&(*rp)->limit_switch, 50000000);
+
     /* Initialise the maximum degress of rotation. */
     (*rp)->max_x = 25;
     (*rp)->max_z = 90;
@@ -122,33 +174,29 @@ void rack_init(rack* rp)
     /* Initialise the current angle of the z axis. */
     (*rp)->cur_z = get_degree_of_rotation("../../cur_z.txt");
 
-    (*rp)->positions[0].x =  (*rp)->max_x;
-    (*rp)->positions[0].z =  (*rp)->max_z;
-    (*rp)->positions[0].visited = false;
+    /* Allocate memory to the array of positions. */
+    (*rp)->num_positions = 7;
+    (*rp)->positions = (position*) malloc(sizeof(position) * (*rp)->num_positions);
 
-    (*rp)->positions[1].x =  (*rp)->max_x;
-    (*rp)->positions[1].z =  0;
-    (*rp)->positions[1].visited = false;
-
-    (*rp)->positions[2].x =  (*rp)->max_x;
-    (*rp)->positions[2].z = -(*rp)->max_z;
-    (*rp)->positions[2].visited = false;
-
-    (*rp)->positions[3].x =  0;
-    (*rp)->positions[3].z =  0;
-    (*rp)->positions[3].visited = false;
-
-    (*rp)->positions[4].x = -(*rp)->max_x;
-    (*rp)->positions[4].z = -(*rp)->max_z;
-    (*rp)->positions[4].visited = false;
-
-    (*rp)->positions[5].x = -(*rp)->max_x;
-    (*rp)->positions[5].z =  0;
-    (*rp)->positions[5].visited = false;
-
-    (*rp)->positions[6].x = -(*rp)->max_x;
-    (*rp)->positions[6].z = (*rp)->max_z;
-    (*rp)->positions[6].visited = false;
+    /* Initialise the positions. */
+    p = 0;
+    for (x = -(*rp)->max_x; x <= (*rp)->max_x; x += (*rp)->max_x)
+    {
+        for (z = -(*rp)->max_z; z <= (*rp)->max_z; z += (*rp)->max_z)
+        {
+            if (x == 0 && z != 0)
+            {
+                /* Don't use these positions. */
+            }
+            else
+            {
+                (*rp)->positions[p].x = x;
+                (*rp)->positions[p].z = z;
+                (*rp)->positions[p].visited = false;
+                p++;
+            }
+        }
+    }
 }
 
 /**
@@ -162,6 +210,9 @@ void rack_term(rack* rp)
 
     /* Terminate the light dependant resistor. */
     ldr_term(&(*rp)->l);
+
+    /* Terminate the limit switch. */
+    button_term(&(*rp)->limit_switch);
 
     /* De-allocate memory from the rack. */
     free(*rp);
@@ -177,13 +228,13 @@ void rotate_z_1degree(rack* rp, enum RotationDirection direction)
      * Gear ratio = 95:62 = 1.532258065:1.
      * 2048 steps * 1.532258065 = ~3138 steps per internal gear revolution.
      * 3138 steps / 360 degress = ~9 steps per degree of the internal gear. */
-    const int ONE_DEGREE = 9;
+//    const int ONE_DEGREE = 9;
 
     /* Rotate by one degree. */
     if (direction == CLOCKWISE)
-        stepper_motor_step(&(*rp)->zmotor, ONE_DEGREE);
+        stepper_motor_step(&(*rp)->zmotor, ONE_DEGREE_Z);
     else if (direction == ANTICLOCKWISE)
-        stepper_motor_step(&(*rp)->zmotor, -ONE_DEGREE);
+        stepper_motor_step(&(*rp)->zmotor, -ONE_DEGREE_Z);
 }
 
 /**
@@ -201,13 +252,13 @@ void rotate_x_1degree(rack* rp, enum RotationDirection direction )
      * 15360 steps * 13.33333 = ~204,800 steps per internal gear revolution.
      * 204800 steps / 360 degress = ~568 steps per degree of the internal
      * gear. */
-    const int ONE_DEGREE = 568;
+//    const int ONE_DEGREE = 568;
 
     /* Rotate by one degree. */
     if (direction == CLOCKWISE)
-        stepper_motor_step(&(*rp)->xmotor, ONE_DEGREE);
+        stepper_motor_step(&(*rp)->xmotor, ONE_DEGREE_X);
     else if (direction == ANTICLOCKWISE)
-        stepper_motor_step(&(*rp)->xmotor, -ONE_DEGREE);
+        stepper_motor_step(&(*rp)->xmotor, -ONE_DEGREE_X);
 }
 
 /**
@@ -317,11 +368,11 @@ position get_closest_position(rack* rp, position current)
 
     /* Calculate the mapped maximum distance the x axis will have to move. */
     mapped_x = 
-        map((*rp)->max_x * 2 * 1.0, 0, (*rp)->max_x * 2, 0, (*rp)->max_z * 2);
+        map((*rp)->max_x * 2 * 1.0, 0, (*rp)->max_x * 2, 0, (*rp)->max_z * 2 * ONE_DEGREE_X);
 
     /* Calculate the maximum distance both axes will have to move combined.
      * This is the sum of both axes maximum potential movement. */
-    min = mapped_x + ((*rp)->max_z * 2);
+    min = mapped_x + ((*rp)->max_z * 2 * ONE_DEGREE_Z);
 
     /* Work out the next closest position. */
     for (p = 0; p < 7; p++)
@@ -331,10 +382,10 @@ position get_closest_position(rack* rp, position current)
         {
             /* Map the x axis for the current position. */
             mapped_x = abs((*rp)->positions[p].x - current.x);
-            mapped_x = map(mapped_x * 1.0, 0, (*rp)->max_x, 0, (*rp)->max_z);
+            mapped_x = map(mapped_x * 1.0, 0, (*rp)->max_x, 0, (*rp)->max_z * ONE_DEGREE_X);
 
             /* Calculate the sum of the movement of both axes in degrees. */
-            distance = mapped_x + abs((*rp)->positions[p].z - current.z);
+            distance = mapped_x + (abs((*rp)->positions[p].z - current.z) * ONE_DEGREE_Z);
             
             /* Check if the sum of movement in degrees of both axes is less
              * or equal to the previously calculated position that was closest
@@ -358,6 +409,17 @@ position get_closest_position(rack* rp, position current)
     return closest;
 }
 
+void reset_z(rack* rp)
+{
+    while(is_released((*rp)->limit_switch))
+    {
+        rotate_z_1degree(rp, CLOCKWISE);
+    }
+    (*rp)->cur_z = 90;
+    
+    /* Write the x axis' position to disk. */
+    store_degree_of_rotation("../../cur_z.txt", (*rp)->cur_z);
+}
 
 /**
  * This function moves the rack so its solar panels are pointing in the
@@ -371,6 +433,8 @@ void light_search(rack* rp)
     /* This is the position of the rack that is pointed towards the brightest
      * bit of light. */
     position brightest;
+
+    reset_z(rp);
 
     /* Get the current position of the rack. */ 
     current.x = get_degree_of_rotation("../../cur_x.txt");
@@ -387,15 +451,25 @@ void light_search(rack* rp)
         rotate_axis(rp, 'x', current.x);
         rotate_axis(rp, 'z', current.z);
 
-        
+        printf("%d of 7: ", i + 1);
+
         /* Read the light sensor. */
         if (ldr_read((*rp)->l))
         {
             /* Record the brightest reading. */
             brightest.x = current.x;
             brightest.z = current.z;
+
+            printf("brightest recorded so far");
         }
+        else
+        {
+            printf("dimmer");
+        }
+        printf("\n");
     }
+
+    printf("moving to the brightest postion\n");
     
     /* Move to the position of the brightest position. */
     rotate_axis(rp, 'x', brightest.x);
@@ -410,6 +484,9 @@ void light_search(rack* rp)
     {
         (*rp)->positions[p].visited = false;
     }
+    
+    printf("Done\n");
+    sleep(10);
 }
 
 /**
