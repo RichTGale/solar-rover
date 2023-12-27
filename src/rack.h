@@ -4,14 +4,13 @@
  * This file contains the public data-structure and function prototype declarations
  * for the rack type, as well as enumeration definitions for it.
  *
- * Version: 0.1.2
+ * Version: 0.3.0
  * Author(s): Richard Gale
  */
 
 #ifndef rack_h
 #define rack_h
 
-#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 
