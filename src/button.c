@@ -1,132 +1,185 @@
 #include "button.h"
 
+/**
+ * This is the internal data-structure of the button type.
+ */
 struct button_data {
-	int pin;
-	uint64_t debounce_time;
-	unsigned long count;
-	int count_mode;
+
+    /* This is the raspberry pi gpio pin corresponding with the button. */
+    int pin;
+
+    /* This is the amount of time it takes to bebounce the button. */
+    uint64_t debounce_time;
+
+    unsigned long count;
+    int count_mode;
+    
+    /* This is the previous steady state from the input pin. It is used to
+     * detect pressed and released events. */
+	int previous_steady_state;  
+
+    /* This is the last steady state from the input pin. */
+	int last_steady_state;      
+
+    /* This is the last flickerable state from the input pin. */
+    int last_flickerable_state; 
 	
-	int previous_steady_state;  // the previous steady state from the input pin, used to detect pressed and released event
-	int last_steady_state;      // the last steady state from the input pin
-    int last_flickerable_state; // the last flickerable state from the input pin
-	
-	struct timespec last_debounce_time; // the last time the output pin was toggled
+    /* This is the last time the output pin was toggled. */
+	struct timespec last_debounce_time; 
     
 };
 
+/**
+ * This function initialises the button provided to it.
+ */
 void button_init(button* bp, int pin, int mode)
 {
+    /* Allocate memory to the button. */
     *bp = (button) malloc(sizeof(struct button_data));
 
+    /* Set up the raspberry pi gpio pin that corresponds with the button. */
+    setup_gpio((*bp)->pin, INPUT, mode);
+
+    /* Initialise the buttons internal data. */
     (*bp)->pin = pin;
     (*bp)->debounce_time = 0;
     (*bp)->count = 0;
     (*bp)->count_mode = COUNT_FALLING;
-
-    setup_gpio((*bp)->pin, INPUT, mode);
-
-	(*bp)->previous_steady_state = input_gpio((*bp)->pin);
+	(*bp)->previous_steady_state = input_gpio(pin);
 	(*bp)->last_steady_state = (*bp)->previous_steady_state;
 	(*bp)->last_flickerable_state = (*bp)->previous_steady_state;
-
 	start_timer(&(*bp)->last_debounce_time);
 }
 
+/**
+ * This function terminates the button provided to it.
+ */
 void button_term(button* bp)
 {
+    /* De-allocate memory from the button. */
     free(*bp);
 }
 
-void set_debounce_time(button* bp, uint64_t time)
+/**
+ * This function sets the amount of time to wait before debouncing the button
+ * provided to it.
+ */
+void button_set_debounce_time(button* bp, uint64_t time)
 {
 	(*bp)->debounce_time = time;
 }
 
-int get_state(button b)
+/**
+ * This function returns the last recorded state the button was in.
+ */
+int button_get_state(button b)
 {
 	return b->last_steady_state;
 }
 
-int get_state_raw(button b)
+/**
+ * This function returns the current state of the button.
+ */
+int button_get_state_raw(button b)
 {
 	return input_gpio(b->pin);
 }
 
-bool is_pressed(button b)
+/**
+ * This function returns true if the button is currently pressed.
+ */
+bool button_is_pressed(button b)
 {
+    bool is_pressed;
+
 	if(b->previous_steady_state == HIGH && b->last_steady_state == LOW)
-		return true;
+		is_pressed = true;
 	else
-		return false;
+		is_pressed = false;
+
+    return is_pressed;
 }
 
-bool is_released(button b)
+/**
+ * This function returns true if the button is currently not pressed.
+ */
+bool button_is_released(button b)
 {
+    bool is_pressed;
+
 	if(b->previous_steady_state == LOW && b->last_steady_state == HIGH)
-		return true;
+		is_pressed = true;
 	else
-		return false;
+		is_pressed = false;
+
+    return is_pressed;
 }
 
-void set_count_mode(button* bp, int mode)
+void button_set_count_mode(button* bp, int mode)
 {
 	(*bp)->count_mode = mode;
 }
 
-unsigned long get_count(button b)
+unsigned long button_get_count(button b)
 {
 	return b->count;
 }
 
-void reset_count(button* bp)
+void button_reset_count(button* bp)
 {
 	(*bp)->count = 0;
 }
 
-void loop(button* bp)
+/**
+ * This function updates the button.
+ */
+void button_update(button* bp)
 {	
-    // read the state of the switch/button:
-	int current_state = input_gpio((*bp)->pin);
+	int current_state;  /* The current state of the button. */
 
-	struct timespec current_time;
+    /* Get the current state of the button. */ 
+	current_state = button_get_state_raw(*bp);
 
-    start_timer(&current_time);
-
-	// check to see if you just pressed the button
-	// (i.e. the input went from LOW to HIGH), and you've waited long enough
-	// since the last press to ignore any noise:
-
-	// If the switch/button changed, due to noise or pressing:
+	/* Check whether the button has changed states. */
 	if (current_state != (*bp)->last_flickerable_state) 
     {
-		// reset the debouncing timer
-		(*bp)->last_debounce_time = current_time;
-		// save the the last flickerable state
+		/* Reset the debouncing timer. */
+        start_timer(&(*bp)->last_debounce_time);
+
+		/* Record the the last flickerable state. */
 		(*bp)->last_flickerable_state = current_state;
 	}
 
+    /* Check whether the debounce time has elapsed. */
 	if (check_timer((*bp)->last_debounce_time, (*bp)->debounce_time))
     {
-		// whatever the reading is at, it's been there for longer than the debounce
-		// delay, so take it as the actual current state:
-
-		// save the the steady state
+		/* Whatever the reading is at, it's been there for longer than the
+         * debounce delay, so take it as the actual current state and record
+         * it. */
 		(*bp)->previous_steady_state = (*bp)->last_steady_state;
 		(*bp)->last_steady_state = current_state;
 	}
 
-	if((*bp)->previous_steady_state != (*bp)->last_steady_state){
+
+	if((*bp)->previous_steady_state != (*bp)->last_steady_state)
+    {
 		if((*bp)->count_mode == COUNT_BOTH)
+        {
 			(*bp)->count++;
+        }
 		else if((*bp)->count_mode == COUNT_FALLING)
         {
 			if((*bp)->previous_steady_state == HIGH && (*bp)->last_steady_state == LOW)
+            {
 				(*bp)->count++;
+            }
 		}
 		else if((*bp)->count_mode == COUNT_RISING)
         {
 			if((*bp)->previous_steady_state == LOW && (*bp)->last_steady_state == HIGH)
+            {
 				(*bp)->count++;
+            }
 		}
 	}
 }

@@ -10,25 +10,6 @@
 
 #include "rack.h"
 
-/* Judging from the 3d models simulations in blender, 7.5 revolutions
- * of the worm gear equals 1 revolution of the spur gear.
- * Gear ratio = 7.5:1. 
- * 2048 steps * 7.5 = 15360 steps per revolution of the spur gear. 
- * There are 200 teeth on the internal gear (if it was whole) and there
- * are 15 teeth on the spur gear. 
- * Gear ratio = 200:15 = 13.33333:1.
- * 15360 steps * 13.33333 = ~204,800 steps per internal gear revolution.
- * 204800 steps / 360 degress = ~568 steps per degree of the internal
- * gear. */
-#define ONE_DEGREE_X 568
-
-/* The number of teeth on the stepper gear is 62, the number on the
- * internal gear is 95.
- * Gear ratio = 95:62 = 1.532258065:1.
- * 2048 steps * 1.532258065 = ~3138 steps per internal gear revolution.
- * 3138 steps / 360 degress = ~9 steps per degree of the internal gear. */
-#define ONE_DEGREE_Z 9
-
 typedef struct {
     int x;
     int z;
@@ -162,7 +143,7 @@ void rack_init(rack* rp)
 
     /* Initialise the limit switch. */
     button_init(&(*rp)->limit_switch, 21, 2);
-    set_debounce_time(&(*rp)->limit_switch, 50000000);
+    button_set_debounce_time(&(*rp)->limit_switch, 50000000);
 
     /* Initialise the maximum degress of rotation. */
     (*rp)->max_x = 25;
@@ -409,15 +390,21 @@ position get_closest_position(rack* rp, position current)
     return closest;
 }
 
+/**
+ * This function uses a limit switch to rotate the z axis to -90 degrees.
+ */
 void reset_z(rack* rp)
 {
-    while(is_released((*rp)->limit_switch))
+    /* Rotate the z axis to -90 degrees. */
+    while(button_get_state((*rp)->limit_switch) == HIGH)
     {
-        rotate_z_1degree(rp, CLOCKWISE);
+        button_update(&(*rp)->limit_switch);
+        rotate_z_1degree(rp, ANTICLOCKWISE);
     }
-    (*rp)->cur_z = 90;
+    button_update(&(*rp)->limit_switch);
+    (*rp)->cur_z = -(*rp)->max_z;
     
-    /* Write the x axis' position to disk. */
+    /* Write the z axis' position to disk. */
     store_degree_of_rotation("../../cur_z.txt", (*rp)->cur_z);
 }
 

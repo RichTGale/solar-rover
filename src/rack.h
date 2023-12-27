@@ -20,6 +20,25 @@
 #include "ldr.h"
 #include "button.h"
 
+/* Judging from the 3d models simulations in blender, 7.5 revolutions
+ * of the worm gear equals 1 revolution of the spur gear.
+ * Gear ratio = 7.5:1. 
+ * 2048 steps * 7.5 = 15360 steps per revolution of the spur gear. 
+ * There are 200 teeth on the internal gear (if it was whole) and there
+ * are 15 teeth on the spur gear. 
+ * Gear ratio = 200:15 = 13.33333:1.
+ * 15360 steps * 13.33333 = ~204,800 steps per internal gear revolution.
+ * 204800 steps / 360 degress = ~568 steps per degree of the internal
+ * gear. */
+#define ONE_DEGREE_X 568
+
+/* The number of teeth on the stepper gear is 62, the number on the
+ * internal gear is 95.
+ * Gear ratio = 95:62 = 1.532258065:1.
+ * 2048 steps * 1.532258065 = ~3138 steps per internal gear revolution.
+ * 3138 steps / 360 degress = ~9 steps per degree of the internal gear. */
+#define ONE_DEGREE_Z 9
+
 /**
  * These are the directions in which the rack can rotate.
  */
