@@ -10,9 +10,6 @@ struct button_data {
 
     /* This is the amount of time it takes to bebounce the button. */
     uint64_t debounce_time;
-
-    unsigned long count;
-    int count_mode;
     
     /* This is the previous steady state from the input pin. It is used to
      * detect pressed and released events. */
@@ -43,8 +40,6 @@ void button_init(button* bp, int pin, int mode)
     /* Initialise the buttons internal data. */
     (*bp)->pin = pin;
     (*bp)->debounce_time = 0;
-    (*bp)->count = 0;
-    (*bp)->count_mode = COUNT_FALLING;
 	(*bp)->previous_steady_state = input_gpio(pin);
 	(*bp)->last_steady_state = (*bp)->previous_steady_state;
 	(*bp)->last_flickerable_state = (*bp)->previous_steady_state;
@@ -115,21 +110,6 @@ bool button_is_released(button b)
     return is_pressed;
 }
 
-void button_set_count_mode(button* bp, int mode)
-{
-	(*bp)->count_mode = mode;
-}
-
-unsigned long button_get_count(button b)
-{
-	return b->count;
-}
-
-void button_reset_count(button* bp)
-{
-	(*bp)->count = 0;
-}
-
 /**
  * This function updates the button.
  */
@@ -158,28 +138,5 @@ void button_update(button* bp)
          * it. */
 		(*bp)->previous_steady_state = (*bp)->last_steady_state;
 		(*bp)->last_steady_state = current_state;
-	}
-
-
-	if((*bp)->previous_steady_state != (*bp)->last_steady_state)
-    {
-		if((*bp)->count_mode == COUNT_BOTH)
-        {
-			(*bp)->count++;
-        }
-		else if((*bp)->count_mode == COUNT_FALLING)
-        {
-			if((*bp)->previous_steady_state == HIGH && (*bp)->last_steady_state == LOW)
-            {
-				(*bp)->count++;
-            }
-		}
-		else if((*bp)->count_mode == COUNT_RISING)
-        {
-			if((*bp)->previous_steady_state == LOW && (*bp)->last_steady_state == HIGH)
-            {
-				(*bp)->count++;
-            }
-		}
 	}
 }

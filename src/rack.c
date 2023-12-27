@@ -126,7 +126,7 @@ void rack_init(rack* rp)
     ldr_init(&(*rp)->l, 14, 15, 18);
 
     /* Initialise the limit switch. */
-    button_init(&(*rp)->limit_switch, 21, 2);
+    button_init(&(*rp)->limit_switch, 1, 2);
     button_set_debounce_time(&(*rp)->limit_switch, 50000000);
 
     /* Initialise the maximum degress of rotation. */
@@ -186,26 +186,10 @@ void rack_term(rack* rp)
 
 /**
  * Forward declaration.
- */
-void rotate_z_1degree(rack* rp, enum RotationDirection direction);
-
-/**
+ *
  * This function uses a limit switch to rotate the z axis to -90 degrees.
  */
-void reset_z(rack* rp)
-{
-    /* Rotate the z axis to -90 degrees. */
-    while (button_get_state((*rp)->limit_switch) == HIGH)
-    {
-        button_update(&(*rp)->limit_switch);
-        rotate_z_1degree(rp, ANTICLOCKWISE);
-    }
-    button_update(&(*rp)->limit_switch);
-    (*rp)->cur_z = -(*rp)->max_z;
-    
-    /* Write the z axis' position to disk. */
-    store_degree_of_rotation("../../cur_z.txt", (*rp)->cur_z);
-}
+void reset_z(rack* rp);
 
 /**
  * This function rotates the rack provided to it by one degree on its z axis.
@@ -221,7 +205,7 @@ void rotate_z_1degree(rack* rp, enum RotationDirection direction)
     else if (direction == ANTICLOCKWISE)
     {
         /* Check if the rack isi not already at maximum rotation. */
-        if (button_get_state((*rp)->limit_switch) == HIGH)
+        if (button_get_state_raw((*rp)->limit_switch) == HIGH)
         {
             stepper_motor_step(&(*rp)->zmotor, -ONE_DEGREE_Z);
             (*rp)->cur_z--;
@@ -232,6 +216,22 @@ void rotate_z_1degree(rack* rp, enum RotationDirection direction)
             reset_z(rp);
         }
     }
+}
+
+/**
+ * This function uses a limit switch to rotate the z axis to -90 degrees.
+ */
+void reset_z(rack* rp)
+{
+    /* Rotate the z axis to -90 degrees. */
+    while (button_get_state_raw((*rp)->limit_switch) == HIGH)
+    {
+        rotate_z_1degree(rp, ANTICLOCKWISE);
+    }
+    (*rp)->cur_z = -(*rp)->max_z;
+    
+    /* Write the z axis' position to disk. */
+    store_degree_of_rotation("../../cur_z.txt", (*rp)->cur_z);
 }
 
 /**
@@ -387,7 +387,6 @@ position get_closest_position(rack* rp, position current)
     return closest;
 }
 
-
 /**
  * This function moves the rack so its solar panels are pointing in the
  * direction of the brightest light.
@@ -423,9 +422,9 @@ void light_search(rack* rp)
         if (ldr_read((*rp)->l))
         {
             /* Record the brightest reading. */
+            printf("brightest recorded so far\n");
             brightest.x = current.x;
             brightest.z = current.z;
-            printf("brightest recorded so far\n");
         }
         else
         {
@@ -433,10 +432,11 @@ void light_search(rack* rp)
         }
     }
 
-    printf("moving to the brightest postion\n");
     
     /* Move to the brightest position. */
+    printf("moving to the brightest postion\n");
     rotate_axis(rp, 'x', brightest.x);
+    reset_z(rp);    /* Ensure the z axis rotates accurately. */
     rotate_axis(rp, 'z', brightest.z);
 
     /* Reset all positions to unvisited in preparation for the next search. */
@@ -451,6 +451,10 @@ void light_search(rack* rp)
  */
 void rack_update(rack* rp, enum RackCommand rack_command)
 {
+    /* Update the button. */
+    button_update(&(*rp)->limit_switch);
+
+    /* Execute the rack command. */ 
     switch (rack_command)
     {
         case X_CLOCKWISE :

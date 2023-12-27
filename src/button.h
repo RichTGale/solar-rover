@@ -10,10 +10,6 @@
 
 #include "mycutils.h"
 
-#define COUNT_FALLING 0
-#define COUNT_RISING  1
-#define COUNT_BOTH    2
-
 /**
  * This is the data -structure of the button type.
  */
@@ -54,12 +50,6 @@ bool button_is_pressed(button b);
  * This function returns true if the button is currently not pressed.
  */
 bool button_is_released(button b);
-
-void button_set_count_mode(button* bp, int mode);
-
-unsigned long button_get_count(button b);
-
-void button_reset_count(button* bp);
 
 /**
  * This function updates the button.
